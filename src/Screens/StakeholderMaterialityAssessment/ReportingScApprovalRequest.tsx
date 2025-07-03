@@ -77,7 +77,7 @@ const ReportingScApprovalRequest = () => {
 
   const handleBack = () => {
     // Navigate back to the previous page
-    navigate(`/steering-committee-approval-request/${reportId}`);
+    navigate(`/reporting-email/${reportId}`);
   }
 
   const handleToggleChange = (index: number) => {

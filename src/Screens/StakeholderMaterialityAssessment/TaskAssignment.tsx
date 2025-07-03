@@ -17,12 +17,14 @@ import {
   Radio,
   InputAdornment,
   DialogContentText,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import SidebarHeader from "../../Components/SidebarHeader";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { ProgressTracker } from "../../Components/progress-tracker";
@@ -81,6 +83,32 @@ const TaskAssignment = () => {
     { id: 7, title: "Sustainability Manager Response", type: 'main' as const, status: "complete" as const },
     { id: 8, title: "Assign Disclosures", type: 'main' as const, status: "in-progress" as const }
   ]);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
+  // Calculate disclosure counts for each dimension
+  const dimensionCounts = useMemo(() => {
+    if (!disclosures || disclosures.length === 0)
+      return {
+        Environmental: 0,
+        Social: 0,
+        Governance: 0,
+      };
+
+    // Filter disclosures that are added to report
+    const addedDisclosures = disclosures.filter(
+      (disclosure) => disclosure.response?.is_added === true
+    );
+
+    return addedDisclosures.reduce((acc, disclosure) => {
+      if (disclosure.dimension) {
+        acc[disclosure.dimension] = (acc[disclosure.dimension] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+  }, [disclosures]);
 
   const getDimensionFromTab = (tabIndex: number): string => {
     switch (tabIndex) {
@@ -158,7 +186,7 @@ const TaskAssignment = () => {
   const handleUserAssignment = (disclosureId: string, userId: string, dueDate: Date | null) => {
     const selectedUser = users.find(u => u.id === userId);
     setDisclosures(disclosures.map(d => 
-      d.id === disclosureId ? { 
+      d.dis_id === disclosureId ? { 
         ...d, 
         assignedTo: userId, 
         assignedToName: selectedUser?.name || 'User',
@@ -465,7 +493,7 @@ const TaskAssignment = () => {
           ) : (
             <Button
               variant="contained"
-              onClick={() => handleOpenAssignDialog(params.row.id)}
+              onClick={() => handleOpenAssignDialog(params.row.dis_id)}
               sx={{
                 bgcolor: '#147C65',
                 '&:hover': {
@@ -498,10 +526,123 @@ const TaskAssignment = () => {
       </Box>
 
       <Box sx={{ backgroundColor: 'white', p: 1, borderRadius: 2, boxShadow: '0px 2px 6px rgba(0,0,0,0.05)' }}>
-        <Box sx={{ p: 3, mb: 1 }}>
-          <Typography color="#147C65" fontWeight="medium" sx={{ fontSize: '15px' }}>
-            Please assign users to each disclosure for data collection
-          </Typography>
+        
+
+        {/* Tabs for Environment, Social, Governance */}
+        <Box
+          sx={{
+            width: "100%",
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: commonBoxShadow,
+            borderBottom: "1px solid #E0E0E0",
+            mb: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              pt: 2,
+              pl: 4,
+            }}
+          >
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              sx={{
+                "& .MuiTab-root": {
+                  textTransform: "none",
+                  minWidth: 100,
+                  fontSize: "16px",
+                  fontWeight: 400,
+                  color: "#64748B",
+                  "&.Mui-selected": {
+                    color: "#147C65",
+                    fontWeight: 500,
+                  },
+                },
+                "& .MuiTabs-indicator": {
+                  backgroundColor: "#147C65",
+                  height: "3px",
+                },
+              }}
+            >
+              <Tab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Typography component="span">Environment</Typography>
+                    <Box
+                      sx={{
+                        ml: 1,
+                        backgroundColor:
+                          activeTab === 0 ? "#147C65" : "#64748B",
+                        color: "white",
+                        borderRadius: "12px",
+                        px: 1,
+                        py: 0.2,
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        minWidth: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {dimensionCounts["Environmental"] || 0}
+                    </Box>
+                  </Box>
+                }
+              />
+              <Tab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Typography component="span">Social</Typography>
+                    <Box
+                      sx={{
+                        ml: 1,
+                        backgroundColor:
+                          activeTab === 1 ? "#147C65" : "#64748B",
+                        color: "white",
+                        borderRadius: "12px",
+                        px: 1,
+                        py: 0.2,
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        minWidth: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {dimensionCounts["Social"] || 0}
+                    </Box>
+                  </Box>
+                }
+              />
+              <Tab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Typography component="span">Governance</Typography>
+                    <Box
+                      sx={{
+                        ml: 1,
+                        backgroundColor:
+                          activeTab === 2 ? "#147C65" : "#64748B",
+                        color: "white",
+                        borderRadius: "12px",
+                        px: 1,
+                        py: 0.2,
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        minWidth: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {dimensionCounts["Governance"] || 0}
+                    </Box>
+                  </Box>
+                }
+              />
+            </Tabs>
+          </Box>
         </Box>
 
         <Box sx={{ height: 400, width: '100%', px: 3 }}>
@@ -901,10 +1042,10 @@ const TaskAssignment = () => {
           {currentDisclosureId && (
             <Box sx={{ mb: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                Disclosure: {disclosures.find(d => d.id === currentDisclosureId)?.disclosure_id}
+                Disclosure: {disclosures.find(d => d.dis_id === currentDisclosureId)?.disclosure_id}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '13px' }}>
-                {disclosures.find(d => d.id === currentDisclosureId)?.disclosure_description}
+                {disclosures.find(d => d.dis_id === currentDisclosureId)?.disclosure_description}
               </Typography>
             </Box>
           )}
@@ -947,6 +1088,22 @@ const TaskAssignment = () => {
             Assign
           </Button>
         </Box>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>{dialogContent.title}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">{dialogContent.content}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Close</Button>
+        </DialogActions>
       </Dialog>
     </SidebarHeader>
   );

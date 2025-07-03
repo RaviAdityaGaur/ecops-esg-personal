@@ -437,20 +437,25 @@ const SelectedDisclosuresSummary = () => {
 
   // Calculate disclosure counts for each dimension
   const dimensionCounts = useMemo(() => {
-    if (!filteredDisclosures || filteredDisclosures.length === 0)
+    if (!disclosures || disclosures.length === 0)
       return {
         Environmental: 0,
         Social: 0,
         Governance: 0,
       };
 
-    return filteredDisclosures.reduce((acc, disclosure) => {
+    // Filter disclosures that are added to report
+    const addedDisclosures = disclosures.filter(
+      (disclosure) => disclosure.response?.is_added === true
+    );
+
+    return addedDisclosures.reduce((acc, disclosure) => {
       if (disclosure.dimension) {
         acc[disclosure.dimension] = (acc[disclosure.dimension] || 0) + 1;
       }
       return acc;
     }, {} as Record<string, number>);
-  }, [filteredDisclosures]);
+  }, [disclosures]);
 
   return (
     <>
