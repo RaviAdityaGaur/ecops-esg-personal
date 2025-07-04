@@ -45,54 +45,53 @@ import ChooseMateriality from "./Screens/MaterialityAssesment/ChooseMateriality.
 import ReportingChooseMateriality from "./Screens/MaterialityAssesment/ReportingChooseMateriality.tsx";
 import SelectMaterialTopics from "./Screens/MaterialityAssesment/SelectMaterialTopics.tsx";
 
-import ChooseMaterialIssue from "./Screens/StakeholderMaterialityAssessment/ChooseMaterialIssue.tsx";
-import ReportingChooseMaterialIssue from "./Screens/StakeholderMaterialityAssessment/ReportingChooseMaterialIssue.tsx";
-import SelectedDisclosuresSummary from "./Screens/StakeholderMaterialityAssessment/SelectedDisclosuresSummary.tsx";
-
-import InternalChooseMaterialIssue from "./Screens/StakeholderMaterialityAssessment/Internal/InternalChooseMaterialIssue.tsx";
 import ReportingSectorIndustryForm from "./Screens/StakeholderMaterialityAssessment/ReportingSectorIndustryForm.tsx";
-import ReportEmail from "./Screens/StakeholderMaterialityAssessment/ReportingEmail.tsx"
+import ReportEmail from "./Screens/StakeholderMaterialityAssessment/ReportingEmail.tsx";
 import ReportingScApprovalRequest from "./Screens/StakeholderMaterialityAssessment/ReportingScApprovalRequest.tsx";
 import SustainabilityManagerResponse from "./Screens/StakeholderMaterialityAssessment/SustainabilityManagerResponse.tsx";
 import TaskAssignment from "./Screens/StakeholderMaterialityAssessment/TaskAssignment.tsx";
 
 //configure section
-import ConfigureCoverPage from './Screens/configure_report/configureCoverPage'
-import ConfigureContent from './Screens/configure_report/configureChooseReportFormat'
-import ConfigureReportDetails1 from './Screens/configure_report/configureReportDetails1.tsx'
-import ConfigureReportDetails2 from './Screens/configure_report/configureReportDetails2.tsx'
-import ConfigureLetterFromSustainabilityOfficer from './Screens/configure_report/configureLetterFromSustainabilityOfficer.tsx'
-import ConfigureLetterFromCEO from './Screens/configure_report/configureLetterFromCEO.tsx'
-import ConfigureAboutUs from './Screens/configure_report/configureAboutUs.tsx'
-import ConfigureESGGoalsProgress from './Screens/configure_report/configureESGGoalsProgress.tsx'
-import ConfigureSustainabilityStructure from './Screens/configure_report/configureSustainabilityStructure.tsx'
-import ConfigureYearInReview from './Screens/configure_report/configureYearInReview.tsx'
-import ConfigureActivitiesValueChain from './Screens/configure_report/configureActivitiesValuechain.tsx'
-import ConfigureMaterialityOpeningPage from './Screens/configure_report/configureMaterialityOpeningPage.tsx'
-import ConfigureMaterialityAssessment from './Screens/configure_report/configureMaterialityAssessment.tsx'
-import ConfigureMaterialityMatrix from './Screens/configure_report/configureMaterialityMatrix.tsx'
-import ConfigureEnviromentalOpeningPage from './Screens/configure_report/configureEnviromentalOpeningPage.tsx'
-import ConfigureEnvInFigures from './Screens/configure_report/configureEnvInFigures.tsx'
-import ConfigureEnvCommitmentGoalsInitiatives from './Screens/configure_report/configureEnvCommitmentGoalsInitiatives.tsx'
-import ConfigureEnvMaterialTopics from './Screens/configure_report/configureEnvMaterialTopics.tsx'
-import ConfigureSocialOpeningPage from './Screens/configure_report/configureSocialOpeningPage.tsx'
-import ConfigureSocialInFigures from './Screens/configure_report/configureSocialInFigures.tsx'
-import ConfigureSocialResponsibility from './Screens/configure_report/configureSocialResponsibility.tsx'
-import ConfigureSocialCSR from './Screens/configure_report/configureSocialCSR.tsx'
-import ConfigureSocialMaterialTopics from './Screens/configure_report/configureSocialMaterialTopics.tsx'
-import ConfigureGovernanceOpeningPage from './Screens/configure_report/configureGovOpeningPage.tsx'
-import ConfigureGovernanceInFigures from './Screens/configure_report/configureGovInFigures.tsx'
-import ConfigureGovernanceCorporateGovernance from './Screens/configure_report/configureGovCorporateGovernance.tsx'
-import ConfigureGovernanceEthicalBusinessConduct from './Screens/configure_report/configureGovEthicalBusinessConduct.tsx' 
-import ConfigureGovernanceStackholderEngagementAndTransparency from './Screens/configure_report/configureGovStakeholder.tsx'
-import ConfigureGovernanceMaterialTopics from './Screens/configure_report/configureGovMaterialTopics.tsx'
-import AppendixOpeningPage from './Screens/configure_report/configureAppendixOpeningPage.tsx'
-import AppendixSustainabilityReportingTopicAssesment from './Screens/configure_report/configureAppendixSustainabilityReport.tsx'
-import AppendixSustainabilityEndNote from './Screens/configure_report/configureAppendixEndNotes.tsx'
-import AppendixSustainabilityAssuranceStatements from './Screens/configure_report/configureAppendixAssuranceStatements.tsx'
-import AppendixDisclaimer from './Screens/configure_report/configureAppendixDisclaimer.tsx'
-import ReportClosingPage from './Screens/configure_report/configureReportClosingPage.tsx'
+import ConfigureCoverPage from "./Screens/configure_report/configureCoverPage";
+import ConfigureContent from "./Screens/configure_report/configureChooseReportFormat";
+import ConfigureReportDetails1 from "./Screens/configure_report/configureReportDetails1.tsx";
+import ConfigureReportDetails2 from "./Screens/configure_report/configureReportDetails2.tsx";
+import ConfigureLetterFromSustainabilityOfficer from "./Screens/configure_report/configureLetterFromSustainabilityOfficer.tsx";
+import ConfigureLetterFromCEO from "./Screens/configure_report/configureLetterFromCEO.tsx";
+import ConfigureAboutUs from "./Screens/configure_report/configureAboutUs.tsx";
+import ConfigureESGGoalsProgress from "./Screens/configure_report/configureESGGoalsProgress.tsx";
+import ConfigureSustainabilityStructure from "./Screens/configure_report/configureSustainabilityStructure.tsx";
+import ConfigureYearInReview from "./Screens/configure_report/configureYearInReview.tsx";
+import ConfigureActivitiesValueChain from "./Screens/configure_report/configureActivitiesValuechain.tsx";
+import ConfigureMaterialityOpeningPage from "./Screens/configure_report/configureMaterialityOpeningPage.tsx";
+import ConfigureMaterialityAssessment from "./Screens/configure_report/configureMaterialityAssessment.tsx";
+import ConfigureMaterialityMatrix from "./Screens/configure_report/configureMaterialityMatrix.tsx";
+import ConfigureEnviromentalOpeningPage from "./Screens/configure_report/configureEnviromentalOpeningPage.tsx";
+import ConfigureEnvInFigures from "./Screens/configure_report/configureEnvInFigures.tsx";
+import ConfigureEnvCommitmentGoalsInitiatives from "./Screens/configure_report/configureEnvCommitmentGoalsInitiatives.tsx";
+import ConfigureEnvMaterialTopics from "./Screens/configure_report/configureEnvMaterialTopics.tsx";
+import ConfigureSocialOpeningPage from "./Screens/configure_report/configureSocialOpeningPage.tsx";
+import ConfigureSocialInFigures from "./Screens/configure_report/configureSocialInFigures.tsx";
+import ConfigureSocialResponsibility from "./Screens/configure_report/configureSocialResponsibility.tsx";
+import ConfigureSocialCSR from "./Screens/configure_report/configureSocialCSR.tsx";
+import ConfigureSocialMaterialTopics from "./Screens/configure_report/configureSocialMaterialTopics.tsx";
+import ConfigureGovernanceOpeningPage from "./Screens/configure_report/configureGovOpeningPage.tsx";
+import ConfigureGovernanceInFigures from "./Screens/configure_report/configureGovInFigures.tsx";
+import ConfigureGovernanceCorporateGovernance from "./Screens/configure_report/configureGovCorporateGovernance.tsx";
+import ConfigureGovernanceEthicalBusinessConduct from "./Screens/configure_report/configureGovEthicalBusinessConduct.tsx";
+import ConfigureGovernanceStackholderEngagementAndTransparency from "./Screens/configure_report/configureGovStakeholder.tsx";
+import ConfigureGovernanceMaterialTopics from "./Screens/configure_report/configureGovMaterialTopics.tsx";
+import AppendixOpeningPage from "./Screens/configure_report/configureAppendixOpeningPage.tsx";
+import AppendixSustainabilityReportingTopicAssesment from "./Screens/configure_report/configureAppendixSustainabilityReport.tsx";
+import AppendixSustainabilityEndNote from "./Screens/configure_report/configureAppendixEndNotes.tsx";
+import AppendixSustainabilityAssuranceStatements from "./Screens/configure_report/configureAppendixAssuranceStatements.tsx";
+import AppendixDisclaimer from "./Screens/configure_report/configureAppendixDisclaimer.tsx";
+import ReportClosingPage from "./Screens/configure_report/configureReportClosingPage.tsx";
 
+import ChooseMaterialIssue from "./Screens/StakeholderMaterialityAssessment/ChooseMaterialIssue.tsx";
+import ReportingChooseMaterialIssue from "./Screens/StakeholderMaterialityAssessment/ReportingChooseMaterialIssue.tsx";
+import SelectedDisclosuresSummary from "./Screens/StakeholderMaterialityAssessment/SelectedDisclosuresSummary.tsx";
+import InternalChooseMaterialIssue from "./Screens/StakeholderMaterialityAssessment/Internal/InternalChooseMaterialIssue.tsx";
 
 const ProtectedRoute = ({ children }) => {
   const auth = localStorage.getItem("auth");
@@ -189,7 +188,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
 
           <Route
             path="/reporting-survey/:reportId"
@@ -493,208 +491,286 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/configure-report" element={
-  <ProtectedRoute>
-    <ConfigureCoverPage />
-  </ProtectedRoute>
-} />
-<Route path="/configure-report/content" element={
-  <ProtectedRoute>
-    <ConfigureContent />
-  </ProtectedRoute>
-} />
-<Route path='/configure-report/details1' element={
-  <ProtectedRoute>
-    <ConfigureReportDetails1 />
-  </ProtectedRoute>
-} />
-<Route path='/configure-report/details2' element={
-  <ProtectedRoute>
-    <ConfigureReportDetails2 />
-  </ProtectedRoute>
-} />
-<Route path="/configure-report/cso-Letter" element={
-  <ProtectedRoute>
-    <ConfigureLetterFromSustainabilityOfficer />
-  </ProtectedRoute>
-} />
-<Route path="/configure-report/ceo-Letter" element={
-  <ProtectedRoute>
-    <ConfigureLetterFromCEO />
-  </ProtectedRoute>
-} />
-<Route path="/configure-report/about-us" element={
-  <ProtectedRoute>
-    <ConfigureAboutUs />
-  </ProtectedRoute>
-} />
-<Route path = "/configure-report/sustainability-structure" element={
-  <ProtectedRoute>
-    <ConfigureSustainabilityStructure />
-  </ProtectedRoute>
-}/>
-<Route path = "/configure-report/ESG-goals-progress" element ={
-  <ProtectedRoute>
-    <ConfigureESGGoalsProgress />
-  </ProtectedRoute>
-}
-/>
-<Route path = "/configure-report/year-in-review" element ={
-  <ProtectedRoute>
-    <ConfigureYearInReview />
-  </ProtectedRoute>
-}
-/>
-<Route path = "/configure-report/activities-value-chain" element ={
-  <ProtectedRoute>
-    <ConfigureActivitiesValueChain />
-  </ProtectedRoute>
-}
-/>
-<Route path = "/configure-report/materiality-opening-page" element ={
-  <ProtectedRoute>
-    <ConfigureMaterialityOpeningPage />
-  </ProtectedRoute>
-}
-/>
-<Route path = "/configure-report/materiality-assessment" element ={
-  <ProtectedRoute>
-    <ConfigureMaterialityAssessment />
-  </ProtectedRoute>
-}
-/>
-<Route path = "/configure-report/materiality-matrix" element ={
-  <ProtectedRoute>
-    <ConfigureMaterialityMatrix />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/Environmental-Opening-page' element ={
-  <ProtectedRoute>
-    <ConfigureEnviromentalOpeningPage />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/environment-in-figures' element ={
-  <ProtectedRoute>
-    <ConfigureEnvInFigures />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/environment-commitment-goals-initiatives' element ={
-  <ProtectedRoute>
-    <ConfigureEnvCommitmentGoalsInitiatives />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/environment-material-topics' element ={
-  <ProtectedRoute>
-    <ConfigureEnvMaterialTopics />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/social-opening-page' element ={
-  <ProtectedRoute>
-    <ConfigureSocialOpeningPage />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/social-in-figures' element ={
-  <ProtectedRoute>
-    <ConfigureSocialInFigures />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/social-responsibility' element ={
-  <ProtectedRoute>
-    <ConfigureSocialResponsibility />
-  </ProtectedRoute>
-}
-/>
-<Route path='/configure-report/social-csr' element ={
-  <ProtectedRoute>
-    <ConfigureSocialCSR />
-  </ProtectedRoute>
-}
-/>
-<Route path = '/configure-report/Social-Material_Topics' element ={
-  <ProtectedRoute>
-    <ConfigureSocialMaterialTopics/>
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Governance-Opening-Page' element = {
-  <ProtectedRoute>
-    <ConfigureGovernanceOpeningPage />
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Governance-In-Figures' element ={
-  <ProtectedRoute>
-    <ConfigureGovernanceInFigures />
-  </ProtectedRoute>
-}
-/>
-<Route path = '/configure-report/Governance-Corporate-Governance' element ={
-  <ProtectedRoute>
-    <ConfigureGovernanceCorporateGovernance />
-  </ProtectedRoute>
-}
-/>
-<Route path = '/configure-report/Governance-Ethical-Business-Conduct' element ={
-  <ProtectedRoute>
-    <ConfigureGovernanceEthicalBusinessConduct />
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Governance-Stackholder-Engagement-And-Transparency' element = {
-  <ProtectedRoute>
-    <ConfigureGovernanceStackholderEngagementAndTransparency />
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Governance-Material-Topics' element ={
-  <ProtectedRoute>
-    <ConfigureGovernanceMaterialTopics/>
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Appendix-Opening-Page' element = {
-  <ProtectedRoute>
-    <AppendixOpeningPage />
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Appendix-Sustainability-Reporting-Topic-Assesment' element ={
-  <ProtectedRoute>
-    <AppendixSustainabilityReportingTopicAssesment />
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Appendix-End-Note' element ={
-  <ProtectedRoute>
-    <AppendixSustainabilityEndNote />
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Appendix-Assurance-Statements' element ={
-  <ProtectedRoute>
-    <AppendixSustainabilityAssuranceStatements />
-  </ProtectedRoute>
-}
-/>
-<Route path = '/configure-report/Appendix-Disclaimer' element ={
-  <ProtectedRoute>
-    <AppendixDisclaimer />
-  </ProtectedRoute>
-}
-/>
-<Route path ='/configure-report/Report-Closing-Page' element ={
-  <ProtectedRoute>
-    <ReportClosingPage />
-  </ProtectedRoute>
-}
-/>
+          <Route
+            path="/configure-report"
+            element={
+              <ProtectedRoute>
+                <ConfigureCoverPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/content"
+            element={
+              <ProtectedRoute>
+                <ConfigureContent />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/details1"
+            element={
+              <ProtectedRoute>
+                <ConfigureReportDetails1 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/details2"
+            element={
+              <ProtectedRoute>
+                <ConfigureReportDetails2 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/cso-Letter"
+            element={
+              <ProtectedRoute>
+                <ConfigureLetterFromSustainabilityOfficer />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/ceo-Letter"
+            element={
+              <ProtectedRoute>
+                <ConfigureLetterFromCEO />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/about-us"
+            element={
+              <ProtectedRoute>
+                <ConfigureAboutUs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/sustainability-structure"
+            element={
+              <ProtectedRoute>
+                <ConfigureSustainabilityStructure />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/ESG-goals-progress"
+            element={
+              <ProtectedRoute>
+                <ConfigureESGGoalsProgress />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/year-in-review"
+            element={
+              <ProtectedRoute>
+                <ConfigureYearInReview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/activities-value-chain"
+            element={
+              <ProtectedRoute>
+                <ConfigureActivitiesValueChain />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/materiality-opening-page"
+            element={
+              <ProtectedRoute>
+                <ConfigureMaterialityOpeningPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/materiality-assessment"
+            element={
+              <ProtectedRoute>
+                <ConfigureMaterialityAssessment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/materiality-matrix"
+            element={
+              <ProtectedRoute>
+                <ConfigureMaterialityMatrix />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Environmental-Opening-page"
+            element={
+              <ProtectedRoute>
+                <ConfigureEnviromentalOpeningPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/environment-in-figures"
+            element={
+              <ProtectedRoute>
+                <ConfigureEnvInFigures />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/environment-commitment-goals-initiatives"
+            element={
+              <ProtectedRoute>
+                <ConfigureEnvCommitmentGoalsInitiatives />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/environment-material-topics"
+            element={
+              <ProtectedRoute>
+                <ConfigureEnvMaterialTopics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/social-opening-page"
+            element={
+              <ProtectedRoute>
+                <ConfigureSocialOpeningPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/social-in-figures"
+            element={
+              <ProtectedRoute>
+                <ConfigureSocialInFigures />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/social-responsibility"
+            element={
+              <ProtectedRoute>
+                <ConfigureSocialResponsibility />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/social-csr"
+            element={
+              <ProtectedRoute>
+                <ConfigureSocialCSR />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Social-Material_Topics"
+            element={
+              <ProtectedRoute>
+                <ConfigureSocialMaterialTopics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Governance-Opening-Page"
+            element={
+              <ProtectedRoute>
+                <ConfigureGovernanceOpeningPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Governance-In-Figures"
+            element={
+              <ProtectedRoute>
+                <ConfigureGovernanceInFigures />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Governance-Corporate-Governance"
+            element={
+              <ProtectedRoute>
+                <ConfigureGovernanceCorporateGovernance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Governance-Ethical-Business-Conduct"
+            element={
+              <ProtectedRoute>
+                <ConfigureGovernanceEthicalBusinessConduct />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Governance-Stackholder-Engagement-And-Transparency"
+            element={
+              <ProtectedRoute>
+                <ConfigureGovernanceStackholderEngagementAndTransparency />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Governance-Material-Topics"
+            element={
+              <ProtectedRoute>
+                <ConfigureGovernanceMaterialTopics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Appendix-Opening-Page"
+            element={
+              <ProtectedRoute>
+                <AppendixOpeningPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Appendix-Sustainability-Reporting-Topic-Assesment"
+            element={
+              <ProtectedRoute>
+                <AppendixSustainabilityReportingTopicAssesment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Appendix-End-Note"
+            element={
+              <ProtectedRoute>
+                <AppendixSustainabilityEndNote />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Appendix-Assurance-Statements"
+            element={
+              <ProtectedRoute>
+                <AppendixSustainabilityAssuranceStatements />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Appendix-Disclaimer"
+            element={
+              <ProtectedRoute>
+                <AppendixDisclaimer />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configure-report/Report-Closing-Page"
+            element={
+              <ProtectedRoute>
+                <ReportClosingPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

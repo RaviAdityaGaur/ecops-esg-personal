@@ -336,7 +336,6 @@ export default function ReportingDisclosureList() {
   // }, [surveyId]);
 
   // Add effect to handle materiality view from navigation state
-
   const location = useLocation();
 
   useEffect(() => {

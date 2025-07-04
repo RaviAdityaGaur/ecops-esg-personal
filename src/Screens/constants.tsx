@@ -1,7 +1,6 @@
-let _API_BASE_URL = 'https://dev-api.ecopshub.com';
+let _API_BASE_URL = "https://dev-api.ecopshub.com";
 let _SSO_SITE_URL = "https://dev-api.ecopshub.com";
 let _IS_PRODUCTION = import.meta.env.PROD;
-
 
 /*
 if (process.env.NODE_ENV === "ecops-prod") {

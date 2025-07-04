@@ -60,7 +60,8 @@ export default function GriPage() {
   // State to track which section is selected (sector or non-sector)
   const [selectedSectionType, setSelectedSectionType] = useState(null); // 'sector' or 'non-sector'
   const [selectedSectorStandard, setSelectedSectorStandard] = useState(null);
-  const [selectedNonSectorStandard, setSelectedNonSectorStandard] = useState(null);
+  const [selectedNonSectorStandard, setSelectedNonSectorStandard] =
+    useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchIndicatorSource = async () => {
@@ -83,14 +84,14 @@ export default function GriPage() {
   }, []);
 
   const handleSectorStandardChange = (event) => {
-    setSelectedSectionType('sector');
+    setSelectedSectionType("sector");
     setSelectedSectorStandard(event.target.value);
     // Clear non-sector selection when sector is selected
     setSelectedNonSectorStandard(null);
   };
 
   const handleNonSectorStandardChange = (event) => {
-    setSelectedSectionType('non-sector');
+    setSelectedSectionType("non-sector");
     setSelectedNonSectorStandard(event.target.value);
     // Clear sector selection when non-sector is selected
     setSelectedSectorStandard(null);
@@ -100,7 +101,8 @@ export default function GriPage() {
     if (!selectedSectionType) {
       setAlertInfo({
         open: true,
-        message: "Please select either a Sector Standard or a Non-Sector Standard before proceeding.",
+        message:
+          "Please select either a Sector Standard or a Non-Sector Standard before proceeding.",
         severity: "error",
       });
       return;
@@ -121,11 +123,14 @@ export default function GriPage() {
       // Get the selected standard object based on which section was selected
       let selectedStandardObj = null;
 
-      if (selectedSectionType === 'sector' && selectedSectorStandard) {
+      if (selectedSectionType === "sector" && selectedSectorStandard) {
         selectedStandardObj = data["sector-standard"].find(
           (standard) => standard.name === selectedSectorStandard
         );
-      } else if (selectedSectionType === 'non-sector' && selectedNonSectorStandard) {
+      } else if (
+        selectedSectionType === "non-sector" &&
+        selectedNonSectorStandard
+      ) {
         selectedStandardObj = data["non-sector-standard"].find(
           (standard) => standard.name === selectedNonSectorStandard
         );
@@ -134,16 +139,25 @@ export default function GriPage() {
       // Prepare the payload for the API
       const reportMetaPayload = {
         reporting: Number(reportId),
-        standard: selectedStandardObj && selectedStandardObj.id ? selectedStandardObj.id : null,
-        sector: selectedStandardObj && selectedStandardObj.sector ? selectedStandardObj.sector : null,
-        industry: selectedStandardObj && selectedStandardObj.industry ? selectedStandardObj.industry : null,
-        linked_survey: null
+        standard:
+          selectedStandardObj && selectedStandardObj.id
+            ? selectedStandardObj.id
+            : null,
+        sector:
+          selectedStandardObj && selectedStandardObj.sector
+            ? selectedStandardObj.sector
+            : null,
+        industry:
+          selectedStandardObj && selectedStandardObj.industry
+            ? selectedStandardObj.industry
+            : null,
+        linked_survey: null,
       };
 
       console.log("Sending payload:", reportMetaPayload);
 
       // Post the data to the report-meta API
-      const response = await api.post('esg/api/report-meta/', {
+      const response = await api.post("esg/api/report-meta/", {
         json: reportMetaPayload,
       });
 
@@ -158,11 +172,11 @@ export default function GriPage() {
 
           // Create a meaningful error message from the response
           let errorMessage = "Failed to save sector information.";
-          if (errorData && typeof errorData === 'object') {
+          if (errorData && typeof errorData === "object") {
             // Extract error details if they exist
             const errorDetails = Object.entries(errorData)
               .map(([key, value]) => `${key}: ${value}`)
-              .join(', ');
+              .join(", ");
 
             if (errorDetails) {
               errorMessage += ` ${errorDetails}`;
@@ -187,7 +201,8 @@ export default function GriPage() {
       console.error("Error updating survey:", error);
       setAlertInfo({
         open: true,
-        message: "An error occurred while saving sector information. Please try again.",
+        message:
+          "An error occurred while saving sector information. Please try again.",
         severity: "error",
       });
     } finally {
@@ -265,7 +280,13 @@ export default function GriPage() {
               <RadioGroup
                 onChange={handleNonSectorStandardChange}
                 value={selectedNonSectorStandard}
-                sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', width: '100%', pl: 2 }}
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  width: "100%",
+                  pl: 2,
+                }}
               >
                 {data["non-sector-standard"]?.map((standard) => (
                   <Grid item xs={6} key={standard.id} sx={{ pl: 2, pr: 2 }}>
@@ -282,13 +303,13 @@ export default function GriPage() {
                       }
                       label={standard.name}
                       sx={{
-                        width: '100%',
-                        margin: '4px 0',
-                        '& .MuiFormControlLabel-label': {
-                          fontSize: '0.95rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }
+                        width: "100%",
+                        margin: "4px 0",
+                        "& .MuiFormControlLabel-label": {
+                          fontSize: "0.95rem",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        },
                       }}
                     />
                   </Grid>
@@ -331,7 +352,11 @@ export default function GriPage() {
                 },
               }}
             >
-              {isLoading ? <CircularProgress size={20} color="inherit" /> : "Next"}
+              {isLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Next"
+              )}
             </Button>
           </Box>
         </Grid>

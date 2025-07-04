@@ -34,30 +34,31 @@ const SurveyNameForm = ({
   const { reportId } = useParams();
   const navigate = useNavigate();
 
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     try {
       setIsLoading(true);
-      
+
       // Make POST request to add disclosures API
-     
-      
+
       // Update linked survey in report-meta API
       try {
         // First get current report meta data
-        const reportMeta = await api.get(`esg/api/report-meta/${reportId}`).json<any>();
-        
-        console.log("try>>>>>>>>>>>>>>>>>>>>>",reportMeta)
+        const reportMeta = await api
+          .get(`esg/api/report-meta/${reportId}`)
+          .json<any>();
+
+        console.log("try>>>>>>>>>>>>>>>>>>>>>", reportMeta);
         // Update the report meta with the selected survey
         if (reportMeta) {
           const currentMeta = reportMeta;
           await api.put(`esg/api/report-meta/${reportId}/`, {
             json: {
               ...currentMeta,
-              linked_survey: surveyName // This is the survey ID from the dropdown
-            }
+              linked_survey: surveyName, // This is the survey ID from the dropdown
+            },
           });
 
-           await api.post("esg/api/add-standard-disclosures-to-report/", {
+          await api.post("esg/api/add-standard-disclosures-to-report/", {
             json: { report_id: reportId },
           });
           console.log("Report meta updated with linked survey:", surveyName);
@@ -69,10 +70,13 @@ const handleSubmit = async () => {
               standard: 0,
               sector: 0,
               industry: 0,
-              linked_survey: surveyName
-            }
+              linked_survey: surveyName,
+            },
           });
-          console.log("New report meta created with linked survey:", surveyName);
+          console.log(
+            "New report meta created with linked survey:",
+            surveyName
+          );
         }
       } catch (metaError) {
         console.error("Error updating report meta:", metaError);

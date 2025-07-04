@@ -172,7 +172,6 @@ export default function StandardSelectionPage() {
       };
       console.log("Sending request body:", requestBody);
 
-
       // Navigate to the sector-industry form page
       navigate(`/reporting-sector-industry-from/${reportId}/${standardId}`);
     } catch (error) {

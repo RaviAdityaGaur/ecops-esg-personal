@@ -77,7 +77,7 @@ const ReportingScApprovalRequest = () => {
 
   const handleBack = () => {
     // Navigate back to the previous page
-    navigate(`/reporting-email/${reportId}`);
+     navigate(`/reporting-email/${reportId}`);
   }
 
   const handleToggleChange = (index: number) => {
