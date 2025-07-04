@@ -34,13 +34,7 @@ const TaskAssignment = () => {
   // const [disclosures, setDisclosures] = useState<DisclosureData[]>([]);
   const [disclosures, setDisclosures] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState(0);
-  const [users] = useState<{ id: string; name: string; department: string; email: string }[]>([
-    { id: '1', name: 'Anish Singh', department: 'Marketing', email: 'anishsingh05@gmail.com' },
-    { id: '2', name: 'John Doe', department: 'HR', email: 'johndoe@gmail.com' },
-    { id: '3', name: 'Jane Smith', department: 'HR', email: 'janesmith@gmail.com' },
-    { id: '4', name: 'Michael Brown', department: 'Operations', email: 'michaelbrown@gmail.com' },
-    { id: '5', name: 'Sarah Williams', department: 'Finance', email: 'sarahwilliams@gmail.com' }
-  ]);
+  const [users, setUsers] = useState<{ id: string; name: string; department: string; email: string }[]>([]);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [finalConfirmDialogOpen, setFinalConfirmDialogOpen] = useState(false);
@@ -128,6 +122,42 @@ const TaskAssignment = () => {
     fetchDisclosuresForReport();
   }, [reportId]);
 
+  useEffect(() => {
+    const fetchInternalUsers = async () => {
+      try {
+        const response = await api.get('esg/api/get-internal-external-users/?user_type=INTERNAL');
+        const usersData = await response.json();
+        console.log('Fetched internal users:', usersData);
+        
+        // Transform the API response to match our expected format
+        const transformedUsers = usersData.map((user: any) => ({
+          id: user.id.toString(),
+          name: user.full_name || 
+                (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') ||
+                user.username || 
+                user.email?.split('@')[0] || 
+                'Unknown User',
+          department: user.department || 'Not specified',
+          email: user.email
+        }));
+        
+        setUsers(transformedUsers);
+      } catch (error) {
+        console.error('Error fetching internal users:', error);
+        // Fallback to hardcoded data if API fails
+        setUsers([
+          { id: '1', name: 'Anish Singh', department: 'Marketing', email: 'anishsingh05@gmail.com' },
+          { id: '2', name: 'John Doe', department: 'HR', email: 'johndoe@gmail.com' },
+          { id: '3', name: 'Jane Smith', department: 'HR', email: 'janesmith@gmail.com' },
+          { id: '4', name: 'Michael Brown', department: 'Operations', email: 'michaelbrown@gmail.com' },
+          { id: '5', name: 'Sarah Williams', department: 'Finance', email: 'sarahwilliams@gmail.com' }
+        ]);
+      }
+    };
+
+    fetchInternalUsers();
+  }, []);
+
   const filteredDisclosures = disclosures.filter((disclosure) => disclosure.dimension === getDimensionFromTab(activeTab) && disclosure.response?.is_added === true);
   const commonBoxShadow = '0px 2px 4px rgba(0, 0, 0, 0.1)';
 
@@ -211,12 +241,218 @@ const TaskAssignment = () => {
     setConfirmDialogOpen(true);
     // We don't reset the monthlyDueDay since we want to keep it when going back to the previous dialog
   };
-  const handleFinalAssignment = () => {
+  const handleFinalAssignment = async () => {
     if (currentDisclosureId && selectedEmployeeId && monthlyDueDay) {
-      // You might want to convert monthlyDueDay to a proper date or keep it as is
-      // For now, we're just passing the due date, but you could enhance this to include the monthly recurrence
-      handleUserAssignment(currentDisclosureId, selectedEmployeeId, dueDate);
-      setFinalConfirmDialogOpen(false);
+      try {
+        setLoading(true);
+        
+        // Get the selected user info
+        const selectedUser = users.find(u => u.id === selectedEmployeeId);
+        
+        // Prepare the payload for the assignment API
+        // Try different payload structures to identify the correct format
+        const payload = {
+          report_disclosure_id: parseInt(currentDisclosureId),
+          assigned_to: parseInt(selectedEmployeeId),
+          due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          priority: 'medium',
+          is_recurring: true,
+          recurrence_type: 'monthly',
+          recurrence_day: parseInt(monthlyDueDay)
+        };
+
+        // Alternative payload structures to try if the above fails
+        const alternativePayloads = [
+          // Try with string IDs instead of integers
+          {
+            report_disclosure_id: currentDisclosureId,
+            assigned_to: selectedEmployeeId,
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            is_recurring: true,
+            recurrence_type: 'monthly',
+            recurrence_day: monthlyDueDay
+          },
+          // Try with report_id included
+          {
+            report_id: parseInt(reportId),
+            report_disclosure_id: parseInt(currentDisclosureId),
+            assigned_to: parseInt(selectedEmployeeId),
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            is_recurring: true,
+            recurrence_type: 'monthly',
+            recurrence_day: parseInt(monthlyDueDay)
+          },
+          // Try with different field names (snake_case)
+          {
+            disclosure_id: parseInt(currentDisclosureId),
+            user_id: parseInt(selectedEmployeeId),
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            recurring: true,
+            recurrence_type: 'monthly',
+            recurrence_day: parseInt(monthlyDueDay)
+          },
+          // Try minimal payload
+          {
+            report_disclosure_id: parseInt(currentDisclosureId),
+            assigned_to: parseInt(selectedEmployeeId),
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+          },
+          // Try with assignee_id instead of assigned_to
+          {
+            report_disclosure_id: parseInt(currentDisclosureId),
+            assignee_id: parseInt(selectedEmployeeId),
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            is_recurring: true,
+            recurrence_type: 'monthly',
+            recurrence_day: parseInt(monthlyDueDay)
+          }
+        ];
+
+        console.log('Assigning task with payload:', payload);
+        console.log('Current disclosure ID:', currentDisclosureId);
+        console.log('Selected employee ID:', selectedEmployeeId);
+        console.log('Monthly due day:', monthlyDueDay);
+        console.log('Due date:', dueDate);
+
+        // Validate required fields before API call
+        if (!payload.report_disclosure_id || isNaN(payload.report_disclosure_id)) {
+          throw new Error('Invalid report_disclosure_id');
+        }
+        if (!payload.assigned_to || isNaN(payload.assigned_to)) {
+          throw new Error('Invalid assigned_to user ID');
+        }
+        if (!payload.recurrence_day || isNaN(payload.recurrence_day)) {
+          throw new Error('Invalid recurrence_day');
+        }
+
+        // Call the assignment API with error handling and alternative payloads
+        let response;
+        let successfulPayload = null;
+        
+        // Try the main payload first
+        try {
+          console.log('Trying main payload:', payload);
+          response = await api.post('esg/api/assign-report-task/', {
+            json: payload
+          });
+          successfulPayload = payload;
+        } catch (firstError) {
+          console.log('Main payload failed, trying alternatives...');
+          
+          // Try alternative payloads
+          for (let i = 0; i < alternativePayloads.length; i++) {
+            try {
+              console.log(`Trying alternative payload ${i + 1}:`, alternativePayloads[i]);
+              response = await api.post('esg/api/assign-report-task/', {
+                json: alternativePayloads[i]
+              });
+              successfulPayload = alternativePayloads[i];
+              console.log(`Alternative payload ${i + 1} succeeded!`);
+              break;
+            } catch (altError) {
+              console.log(`Alternative payload ${i + 1} failed:`, altError);
+              if (i === alternativePayloads.length - 1) {
+                // If all alternatives failed, throw the last error
+                throw altError;
+              }
+            }
+          }
+        }
+
+        console.log('Task assignment response status:', response.status);
+        console.log('Task assignment response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('Successful payload was:', successfulPayload);
+
+        let responseData;
+        
+        // Always try to get the response data, whether success or error
+        try {
+          responseData = await response.json();
+          console.log('Response data:', responseData);
+        } catch (e) {
+          console.log('Response is not JSON, trying text...');
+          try {
+            responseData = await response.text();
+            console.log('Response text:', responseData);
+          } catch (e2) {
+            console.log('Could not read response at all');
+          }
+        }
+
+        // Check if response is successful
+        if (response.ok) {
+          console.log('Task assignment successful:', responseData);
+        } else {
+          // Log detailed error information
+          console.error('API request failed with status:', response.status);
+          console.error('Response status text:', response.statusText);
+          console.error('Error response body:', responseData);
+          
+          // Try to get more specific error message
+          let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+          if (responseData) {
+            if (typeof responseData === 'object') {
+              // Look for common error fields
+              if (responseData.detail) {
+                errorMessage += `. Detail: ${responseData.detail}`;
+              } else if (responseData.error) {
+                errorMessage += `. Error: ${responseData.error}`;
+              } else if (responseData.message) {
+                errorMessage += `. Message: ${responseData.message}`;
+              } else {
+                errorMessage += `. Details: ${JSON.stringify(responseData)}`;
+              }
+            } else {
+              errorMessage += `. Response: ${responseData}`;
+            }
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        // Update local state after successful API call
+        handleUserAssignment(currentDisclosureId, selectedEmployeeId, dueDate);
+        
+        // Close the dialog
+        setFinalConfirmDialogOpen(false);
+        
+        // Reset form fields
+        setCurrentDisclosureId(null);
+        setSelectedEmployeeId(null);
+        setDueDate(null);
+        setMonthlyDueDay('');
+        
+        // Show success message (you can add a snackbar here if needed)
+        console.log('Task assigned successfully!');
+        alert('Task assigned successfully!');
+        
+      } catch (error) {
+        console.error('Error assigning task:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        
+        // More detailed error handling
+        if (error instanceof Error) {
+          console.error('Error message:', error.message);
+          alert(`Failed to assign task: ${error.message}`);
+        } else {
+          console.error('Unknown error type:', typeof error);
+          alert('Failed to assign task. Please check the console for details and try again.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Validation error
+      console.error('Missing required fields:', {
+        currentDisclosureId,
+        selectedEmployeeId,
+        monthlyDueDay
+      });
+      alert('Please fill in all required fields before assigning the task.');
     }
   };
 
@@ -763,13 +999,13 @@ const TaskAssignment = () => {
               <DatePicker
                 value={dueDate}
                 onChange={(newValue) => setDueDate(newValue)}
-                format="DD/MM/YY"
+                format="dd/MM/yyyy"
                 slotProps={{
                   textField: {
                     fullWidth: true,
                     variant: 'outlined',
                     size: 'small',
-                    placeholder: 'DD/MM/YY',
+                    placeholder: 'DD/MM/YYYY',
                     sx: {
                       '.MuiOutlinedInput-root': {
                         borderRadius: 1,
@@ -975,7 +1211,7 @@ const TaskAssignment = () => {
           <Button
             onClick={handleFinalAssignment}
             variant="contained"
-            disabled={!monthlyDueDay.trim()}
+            disabled={!monthlyDueDay.trim() || loading}
             sx={{
               bgcolor: '#147C65',
               '&:hover': { bgcolor: '#0e6651' },
@@ -985,7 +1221,7 @@ const TaskAssignment = () => {
               textTransform: 'none'
             }}
           >
-            Assign
+            {loading ? 'Assigning...' : 'Assign'}
           </Button>
         </Box>
       </Dialog>
