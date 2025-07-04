@@ -60,7 +60,7 @@ const TaskAssignment = () => {
     { id: 8, title: 'Assign Disclosures', type: 'main' as const, status: 'in-progress' as const }
   ]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -130,7 +130,7 @@ const TaskAssignment = () => {
         console.log('Fetched internal users:', usersData);
         
         // Transform the API response to match our expected format
-        const transformedUsers = usersData.map((user: any) => ({
+        const transformedUsers = (usersData as any[]).map((user: any) => ({
           id: user.id.toString(),
           name: user.full_name || 
                 (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') ||
@@ -185,17 +185,20 @@ const TaskAssignment = () => {
   };
   const handleUserAssignment = (disclosureId: string, userId: string, dueDate: Date | null) => {
     const selectedUser = users.find((u) => u.id === userId);
+    console.log('Updating disclosure with report_disclosure_id:', disclosureId);
     setDisclosures(
-      disclosures.map((d) =>
-        d.dis_id === disclosureId
-          ? {
-              ...d,
-              assignedTo: userId,
-              assignedToName: selectedUser?.name || 'User',
-              dueDate: dueDate
-            }
-          : d
-      )
+      disclosures.map((d) => {
+        if (d.report_disclosure_id.toString() === disclosureId) {
+          console.log('Found matching disclosure:', d);
+          return {
+            ...d,
+            assignedTo: userId,
+            assignedToName: selectedUser?.name || 'User',
+            dueDate: dueDate
+          };
+        }
+        return d;
+      })
     );
   };
   const handleOpenAssignDialog = (disclosureId: string) => {
@@ -249,11 +252,18 @@ const TaskAssignment = () => {
         // Get the selected user info
         const selectedUser = users.find(u => u.id === selectedEmployeeId);
         
+        // Find the disclosure object to ensure it exists
+        const currentDisclosure = disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId);
+        if (!currentDisclosure) {
+          throw new Error(`Disclosure with report_disclosure_id ${currentDisclosureId} not found`);
+        }
+        
         // Prepare the payload for the assignment API
         // Try different payload structures to identify the correct format
         const payload = {
           report_disclosure_id: parseInt(currentDisclosureId),
           assigned_to: parseInt(selectedEmployeeId),
+          request_data: 'nothing',
           due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           priority: 'medium',
           is_recurring: true,
@@ -275,7 +285,7 @@ const TaskAssignment = () => {
           },
           // Try with report_id included
           {
-            report_id: parseInt(reportId),
+            report_id: reportId ? parseInt(reportId) : 0,
             report_disclosure_id: parseInt(currentDisclosureId),
             assigned_to: parseInt(selectedEmployeeId),
             due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -284,9 +294,9 @@ const TaskAssignment = () => {
             recurrence_type: 'monthly',
             recurrence_day: parseInt(monthlyDueDay)
           },
-          // Try with different field names (snake_case)
+          // Try with different field names (snake_case) - using the actual dis_id for this variant
           {
-            disclosure_id: parseInt(currentDisclosureId),
+            disclosure_id: parseInt(currentDisclosureId), // This should be the report_disclosure_id value
             user_id: parseInt(selectedEmployeeId),
             due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             priority: 'medium',
@@ -309,11 +319,42 @@ const TaskAssignment = () => {
             is_recurring: true,
             recurrence_type: 'monthly',
             recurrence_day: parseInt(monthlyDueDay)
+          },
+          // Try with different boolean values
+          {
+            report_disclosure_id: parseInt(currentDisclosureId),
+            assigned_to: parseInt(selectedEmployeeId),
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            is_recurring: 'true',
+            recurrence_type: 'monthly',
+            recurrence_day: parseInt(monthlyDueDay)
+          },
+          // Try with report_disclosure instead of report_disclosure_id
+          {
+            report_disclosure: parseInt(currentDisclosureId),
+            assigned_to: parseInt(selectedEmployeeId),
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            is_recurring: true,
+            recurrence_type: 'monthly',
+            recurrence_day: parseInt(monthlyDueDay)
+          },
+          // Try with user instead of assigned_to
+          {
+            report_disclosure_id: parseInt(currentDisclosureId),
+            user: parseInt(selectedEmployeeId),
+            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            priority: 'medium',
+            is_recurring: true,
+            recurrence_type: 'monthly',
+            recurrence_day: parseInt(monthlyDueDay)
           }
         ];
 
         console.log('Assigning task with payload:', payload);
-        console.log('Current disclosure ID:', currentDisclosureId);
+        console.log('Current disclosure ID (should be report_disclosure_id):', currentDisclosureId);
+        console.log('Full disclosure object:', disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId));
         console.log('Selected employee ID:', selectedEmployeeId);
         console.log('Monthly due day:', monthlyDueDay);
         console.log('Due date:', dueDate);
@@ -332,6 +373,7 @@ const TaskAssignment = () => {
         // Call the assignment API with error handling and alternative payloads
         let response;
         let successfulPayload = null;
+        let lastError = null;
         
         // Try the main payload first
         try {
@@ -339,9 +381,31 @@ const TaskAssignment = () => {
           response = await api.post('esg/api/assign-report-task/', {
             json: payload
           });
-          successfulPayload = payload;
+          
+          // Check if response is ok
+          if (response.ok) {
+            successfulPayload = payload;
+          } else {
+            // Get error details from response
+            let errorBody;
+            try {
+              errorBody = await response.json();
+            } catch (e) {
+              try {
+                errorBody = await response.text();
+              } catch (e2) {
+                errorBody = 'Could not read error response';
+              }
+            }
+            
+            const error = new Error(`Main payload failed: ${response.status} ${response.statusText}. Response: ${JSON.stringify(errorBody)}`);
+            console.log('Main payload error details:', errorBody);
+            throw error;
+          }
         } catch (firstError) {
           console.log('Main payload failed, trying alternatives...');
+          lastError = firstError;
+          response = undefined; // Reset response for alternative attempts
           
           // Try alternative payloads
           for (let i = 0; i < alternativePayloads.length; i++) {
@@ -350,17 +414,50 @@ const TaskAssignment = () => {
               response = await api.post('esg/api/assign-report-task/', {
                 json: alternativePayloads[i]
               });
-              successfulPayload = alternativePayloads[i];
-              console.log(`Alternative payload ${i + 1} succeeded!`);
-              break;
+              
+              // Check if this response is ok
+              if (response.ok) {
+                successfulPayload = alternativePayloads[i];
+                console.log(`Alternative payload ${i + 1} succeeded!`);
+                break;
+              } else {
+                // Get error details from response
+                let errorBody;
+                try {
+                  errorBody = await response.json();
+                } catch (e) {
+                  try {
+                    errorBody = await response.text();
+                  } catch (e2) {
+                    errorBody = 'Could not read error response';
+                  }
+                }
+                
+                console.log(`Alternative payload ${i + 1} failed with status ${response.status}:`, errorBody);
+                lastError = new Error(`Payload ${i + 1} failed: ${response.status} ${response.statusText}. Response: ${JSON.stringify(errorBody)}`);
+                response = undefined; // Reset response since this attempt failed
+                
+                if (i === alternativePayloads.length - 1) {
+                  // If this was the last alternative, throw the error
+                  throw lastError;
+                }
+              }
             } catch (altError) {
               console.log(`Alternative payload ${i + 1} failed:`, altError);
+              lastError = altError;
+              response = undefined; // Reset response since this attempt failed
               if (i === alternativePayloads.length - 1) {
                 // If all alternatives failed, throw the last error
-                throw altError;
+                throw lastError;
               }
             }
           }
+        }
+
+        // Verify we have a successful response
+        if (!response || !response.ok || !successfulPayload) {
+          const errorMsg = lastError instanceof Error ? lastError.message : 'All payload attempts failed';
+          throw new Error(`Assignment failed: ${errorMsg}`);
         }
 
         console.log('Task assignment response status:', response.status);
@@ -369,7 +466,7 @@ const TaskAssignment = () => {
 
         let responseData;
         
-        // Always try to get the response data, whether success or error
+        // Get the response data
         try {
           responseData = await response.json();
           console.log('Response data:', responseData);
@@ -383,36 +480,8 @@ const TaskAssignment = () => {
           }
         }
 
-        // Check if response is successful
-        if (response.ok) {
-          console.log('Task assignment successful:', responseData);
-        } else {
-          // Log detailed error information
-          console.error('API request failed with status:', response.status);
-          console.error('Response status text:', response.statusText);
-          console.error('Error response body:', responseData);
-          
-          // Try to get more specific error message
-          let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
-          if (responseData) {
-            if (typeof responseData === 'object') {
-              // Look for common error fields
-              if (responseData.detail) {
-                errorMessage += `. Detail: ${responseData.detail}`;
-              } else if (responseData.error) {
-                errorMessage += `. Error: ${responseData.error}`;
-              } else if (responseData.message) {
-                errorMessage += `. Message: ${responseData.message}`;
-              } else {
-                errorMessage += `. Details: ${JSON.stringify(responseData)}`;
-              }
-            } else {
-              errorMessage += `. Response: ${responseData}`;
-            }
-          }
-          
-          throw new Error(errorMessage);
-        }
+        // Since we already verified response.ok above, we can proceed with success
+        console.log('Task assignment successful:', responseData);
 
         // Update local state after successful API call
         handleUserAssignment(currentDisclosureId, selectedEmployeeId, dueDate);
@@ -656,7 +725,11 @@ const TaskAssignment = () => {
               )}
             </Box>
           ) : (
-            <Button variant="contained" onClick={() => handleOpenAssignDialog(params.row.dis_id)} sx={{ bgcolor: '#147C65', '&:hover': { backgroundColor: '#1b5e20' }, textTransform: 'none', fontSize: '14px', borderRadius: '4px', py: 0.5 }}>
+            <Button variant="contained" onClick={() => {
+              console.log('Assign button clicked for disclosure:', params.row);
+              console.log('report_disclosure_id being passed:', params.row.report_disclosure_id);
+              handleOpenAssignDialog(params.row.report_disclosure_id.toString());
+            }} sx={{ bgcolor: '#147C65', '&:hover': { backgroundColor: '#1b5e20' }, textTransform: 'none', fontSize: '14px', borderRadius: '4px', py: 0.5 }}>
               {' '}
               Assign User{' '}
             </Button>
@@ -794,7 +867,7 @@ const TaskAssignment = () => {
           <DataGrid
             rows={filteredDisclosures}
             columns={columns}
-            getRowId={(row) => row.dis_id}
+            getRowId={(row) => row.report_disclosure_id}
             initialState={{
               pagination: {
                 paginationModel: { page: 0, pageSize: 5 }
@@ -1175,10 +1248,10 @@ const TaskAssignment = () => {
           {currentDisclosureId && (
             <Box sx={{ mb: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                Disclosure: {disclosures.find((d) => d.dis_id === currentDisclosureId)?.disclosure_id}
+                Disclosure: {disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId)?.disclosure_id}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '13px' }}>
-                {disclosures.find((d) => d.dis_id === currentDisclosureId)?.disclosure_description}
+                {disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId)?.disclosure_description}
               </Typography>
             </Box>
           )}
