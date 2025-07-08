@@ -34,7 +34,7 @@ const TaskAssignment = () => {
   // const [disclosures, setDisclosures] = useState<DisclosureData[]>([]);
   const [disclosures, setDisclosures] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState(0);
-  const [users, setUsers] = useState<{ id: string; name: string; department: string; email: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; department: string; email: string; org_user_id: string }[]>([]);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [finalConfirmDialogOpen, setFinalConfirmDialogOpen] = useState(false);
@@ -43,6 +43,8 @@ const TaskAssignment = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [monthlyDueDay, setMonthlyDueDay] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState({
     title: '',
@@ -74,7 +76,7 @@ const TaskAssignment = () => {
       };
 
     // Filter disclosures that are added to report
-    const addedDisclosures = disclosures.filter((disclosure) => disclosure.response?.is_added === true);
+    const addedDisclosures = disclosures.filter(disclosure => disclosure.response?.is_added === true);
 
     return addedDisclosures.reduce((acc, disclosure) => {
       if (disclosure.dimension) {
@@ -128,37 +130,27 @@ const TaskAssignment = () => {
         const response = await api.get('esg/api/get-internal-external-users/?user_type=INTERNAL');
         const usersData = await response.json();
         console.log('Fetched internal users:', usersData);
-        
+
         // Transform the API response to match our expected format
         const transformedUsers = (usersData as any[]).map((user: any) => ({
           id: user.id.toString(),
-          name: user.full_name || 
-                (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') ||
-                user.username || 
-                user.email?.split('@')[0] || 
-                'Unknown User',
+          org_user_id: user.org_user_id,
+          name: user.full_name || (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') || user.username || user.email?.split('@')[0] || 'Unknown User',
           department: user.department || 'Not specified',
           email: user.email
         }));
-        
+
         setUsers(transformedUsers);
       } catch (error) {
         console.error('Error fetching internal users:', error);
         // Fallback to hardcoded data if API fails
-        setUsers([
-          { id: '1', name: 'Anish Singh', department: 'Marketing', email: 'anishsingh05@gmail.com' },
-          { id: '2', name: 'John Doe', department: 'HR', email: 'johndoe@gmail.com' },
-          { id: '3', name: 'Jane Smith', department: 'HR', email: 'janesmith@gmail.com' },
-          { id: '4', name: 'Michael Brown', department: 'Operations', email: 'michaelbrown@gmail.com' },
-          { id: '5', name: 'Sarah Williams', department: 'Finance', email: 'sarahwilliams@gmail.com' }
-        ]);
       }
     };
 
     fetchInternalUsers();
   }, []);
 
-  const filteredDisclosures = disclosures.filter((disclosure) => disclosure.dimension === getDimensionFromTab(activeTab) && disclosure.response?.is_added === true);
+  const filteredDisclosures = disclosures.filter(disclosure => disclosure.dimension === getDimensionFromTab(activeTab) && disclosure.response?.is_added === true);
   const commonBoxShadow = '0px 2px 4px rgba(0, 0, 0, 0.1)';
 
   const handleBack = () => {
@@ -174,7 +166,7 @@ const TaskAssignment = () => {
       // });
 
       // Mock successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       navigate(`/reporting-task-management/${reportId}`);
     } catch (error) {
@@ -184,10 +176,10 @@ const TaskAssignment = () => {
     }
   };
   const handleUserAssignment = (disclosureId: string, userId: string, dueDate: Date | null) => {
-    const selectedUser = users.find((u) => u.id === userId);
+    const selectedUser = users.find(u => u.id === userId);
     console.log('Updating disclosure with report_disclosure_id:', disclosureId);
     setDisclosures(
-      disclosures.map((d) => {
+      disclosures.map(d => {
         if (d.report_disclosure_id.toString() === disclosureId) {
           console.log('Found matching disclosure:', d);
           return {
@@ -207,6 +199,8 @@ const TaskAssignment = () => {
     setSearchQuery('');
     setDueDate(null);
     setMonthlyDueDay('');
+    setNotes('');
+    setSelectedTemplate('');
     setAssignDialogOpen(true);
   };
   const handleCloseAssignDialog = () => {
@@ -215,9 +209,12 @@ const TaskAssignment = () => {
     setSelectedEmployeeId(null);
     setSearchQuery('');
     setMonthlyDueDay('');
+    setNotes('');
+    setSelectedTemplate('');
   };
 
   const handleSelectEmployee = (employeeId: string) => {
+    console.log('user id>>>>', employeeId);
     setSelectedEmployeeId(employeeId);
   };
 
@@ -245,19 +242,10 @@ const TaskAssignment = () => {
     // We don't reset the monthlyDueDay since we want to keep it when going back to the previous dialog
   };
   const handleFinalAssignment = async () => {
+    console.log('current >>>>', currentDisclosureId);
     if (currentDisclosureId && selectedEmployeeId && monthlyDueDay) {
       try {
         setLoading(true);
-        
-        // Get the selected user info
-        const selectedUser = users.find(u => u.id === selectedEmployeeId);
-        
-        // Find the disclosure object to ensure it exists
-        const currentDisclosure = disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId);
-        if (!currentDisclosure) {
-          throw new Error(`Disclosure with report_disclosure_id ${currentDisclosureId} not found`);
-        }
-        
         // Prepare the payload for the assignment API
         // Try different payload structures to identify the correct format
         const payload = {
@@ -268,97 +256,11 @@ const TaskAssignment = () => {
           priority: 'medium',
           is_recurring: true,
           recurrence_type: 'monthly',
-          recurrence_day: parseInt(monthlyDueDay)
+          recurrence_day: parseInt(monthlyDueDay),
+          notes: notes || '',
+          template: selectedTemplate || ''
         };
-
-        // Alternative payload structures to try if the above fails
-        const alternativePayloads = [
-          // Try with string IDs instead of integers
-          {
-            report_disclosure_id: currentDisclosureId,
-            assigned_to: selectedEmployeeId,
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            priority: 'medium',
-            is_recurring: true,
-            recurrence_type: 'monthly',
-            recurrence_day: monthlyDueDay
-          },
-          // Try with report_id included
-          {
-            report_id: reportId ? parseInt(reportId) : 0,
-            report_disclosure_id: parseInt(currentDisclosureId),
-            assigned_to: parseInt(selectedEmployeeId),
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            priority: 'medium',
-            is_recurring: true,
-            recurrence_type: 'monthly',
-            recurrence_day: parseInt(monthlyDueDay)
-          },
-          // Try with different field names (snake_case) - using the actual dis_id for this variant
-          {
-            disclosure_id: parseInt(currentDisclosureId), // This should be the report_disclosure_id value
-            user_id: parseInt(selectedEmployeeId),
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            priority: 'medium',
-            recurring: true,
-            recurrence_type: 'monthly',
-            recurrence_day: parseInt(monthlyDueDay)
-          },
-          // Try minimal payload
-          {
-            report_disclosure_id: parseInt(currentDisclosureId),
-            assigned_to: parseInt(selectedEmployeeId),
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-          },
-          // Try with assignee_id instead of assigned_to
-          {
-            report_disclosure_id: parseInt(currentDisclosureId),
-            assignee_id: parseInt(selectedEmployeeId),
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            priority: 'medium',
-            is_recurring: true,
-            recurrence_type: 'monthly',
-            recurrence_day: parseInt(monthlyDueDay)
-          },
-          // Try with different boolean values
-          {
-            report_disclosure_id: parseInt(currentDisclosureId),
-            assigned_to: parseInt(selectedEmployeeId),
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            priority: 'medium',
-            is_recurring: 'true',
-            recurrence_type: 'monthly',
-            recurrence_day: parseInt(monthlyDueDay)
-          },
-          // Try with report_disclosure instead of report_disclosure_id
-          {
-            report_disclosure: parseInt(currentDisclosureId),
-            assigned_to: parseInt(selectedEmployeeId),
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            priority: 'medium',
-            is_recurring: true,
-            recurrence_type: 'monthly',
-            recurrence_day: parseInt(monthlyDueDay)
-          },
-          // Try with user instead of assigned_to
-          {
-            report_disclosure_id: parseInt(currentDisclosureId),
-            user: parseInt(selectedEmployeeId),
-            due_date: dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            priority: 'medium',
-            is_recurring: true,
-            recurrence_type: 'monthly',
-            recurrence_day: parseInt(monthlyDueDay)
-          }
-        ];
-
         console.log('Assigning task with payload:', payload);
-        console.log('Current disclosure ID (should be report_disclosure_id):', currentDisclosureId);
-        console.log('Full disclosure object:', disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId));
-        console.log('Selected employee ID:', selectedEmployeeId);
-        console.log('Monthly due day:', monthlyDueDay);
-        console.log('Due date:', dueDate);
-
         // Validate required fields before API call
         if (!payload.report_disclosure_id || isNaN(payload.report_disclosure_id)) {
           throw new Error('Invalid report_disclosure_id');
@@ -374,143 +276,34 @@ const TaskAssignment = () => {
         let response;
         let successfulPayload = null;
         let lastError = null;
-        
+
         // Try the main payload first
         try {
           console.log('Trying main payload:', payload);
           response = await api.post('esg/api/assign-report-task/', {
             json: payload
           });
-          
-          // Check if response is ok
-          if (response.ok) {
-            successfulPayload = payload;
-          } else {
-            // Get error details from response
-            let errorBody;
-            try {
-              errorBody = await response.json();
-            } catch (e) {
-              try {
-                errorBody = await response.text();
-              } catch (e2) {
-                errorBody = 'Could not read error response';
-              }
-            }
-            
-            const error = new Error(`Main payload failed: ${response.status} ${response.statusText}. Response: ${JSON.stringify(errorBody)}`);
-            console.log('Main payload error details:', errorBody);
-            throw error;
-          }
-        } catch (firstError) {
+          console.log('res', response);
+        } catch (error) {
           console.log('Main payload failed, trying alternatives...');
-          lastError = firstError;
-          response = undefined; // Reset response for alternative attempts
-          
-          // Try alternative payloads
-          for (let i = 0; i < alternativePayloads.length; i++) {
-            try {
-              console.log(`Trying alternative payload ${i + 1}:`, alternativePayloads[i]);
-              response = await api.post('esg/api/assign-report-task/', {
-                json: alternativePayloads[i]
-              });
-              
-              // Check if this response is ok
-              if (response.ok) {
-                successfulPayload = alternativePayloads[i];
-                console.log(`Alternative payload ${i + 1} succeeded!`);
-                break;
-              } else {
-                // Get error details from response
-                let errorBody;
-                try {
-                  errorBody = await response.json();
-                } catch (e) {
-                  try {
-                    errorBody = await response.text();
-                  } catch (e2) {
-                    errorBody = 'Could not read error response';
-                  }
-                }
-                
-                console.log(`Alternative payload ${i + 1} failed with status ${response.status}:`, errorBody);
-                lastError = new Error(`Payload ${i + 1} failed: ${response.status} ${response.statusText}. Response: ${JSON.stringify(errorBody)}`);
-                response = undefined; // Reset response since this attempt failed
-                
-                if (i === alternativePayloads.length - 1) {
-                  // If this was the last alternative, throw the error
-                  throw lastError;
-                }
-              }
-            } catch (altError) {
-              console.log(`Alternative payload ${i + 1} failed:`, altError);
-              lastError = altError;
-              response = undefined; // Reset response since this attempt failed
-              if (i === alternativePayloads.length - 1) {
-                // If all alternatives failed, throw the last error
-                throw lastError;
-              }
-            }
-          }
+        }
+        if (response) {
+          // Update local state after successful API call
+          handleUserAssignment(currentDisclosureId, selectedEmployeeId, dueDate);
         }
 
-        // Verify we have a successful response
-        if (!response || !response.ok || !successfulPayload) {
-          const errorMsg = lastError instanceof Error ? lastError.message : 'All payload attempts failed';
-          throw new Error(`Assignment failed: ${errorMsg}`);
-        }
-
-        console.log('Task assignment response status:', response.status);
-        console.log('Task assignment response headers:', Object.fromEntries(response.headers.entries()));
-        console.log('Successful payload was:', successfulPayload);
-
-        let responseData;
-        
-        // Get the response data
-        try {
-          responseData = await response.json();
-          console.log('Response data:', responseData);
-        } catch (e) {
-          console.log('Response is not JSON, trying text...');
-          try {
-            responseData = await response.text();
-            console.log('Response text:', responseData);
-          } catch (e2) {
-            console.log('Could not read response at all');
-          }
-        }
-
-        // Since we already verified response.ok above, we can proceed with success
-        console.log('Task assignment successful:', responseData);
-
-        // Update local state after successful API call
-        handleUserAssignment(currentDisclosureId, selectedEmployeeId, dueDate);
-        
         // Close the dialog
         setFinalConfirmDialogOpen(false);
-        
+
         // Reset form fields
         setCurrentDisclosureId(null);
         setSelectedEmployeeId(null);
         setDueDate(null);
         setMonthlyDueDay('');
-        
-        // Show success message (you can add a snackbar here if needed)
-        console.log('Task assigned successfully!');
-        alert('Task assigned successfully!');
-        
+        setNotes('');
+        setSelectedTemplate('');
       } catch (error) {
         console.error('Error assigning task:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
-        
-        // More detailed error handling
-        if (error instanceof Error) {
-          console.error('Error message:', error.message);
-          alert(`Failed to assign task: ${error.message}`);
-        } else {
-          console.error('Unknown error type:', typeof error);
-          alert('Failed to assign task. Please check the console for details and try again.');
-        }
       } finally {
         setLoading(false);
       }
@@ -713,10 +506,11 @@ const TaskAssignment = () => {
       width: 200,
       renderCell: (params: any) => (
         <Box>
-          {params.row.assignedTo ? (
+          {
+          params.row.assignedTo ? (
             <Box sx={{ fontSize: '14px' }}>
               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                {params.row.assignedToName || users.find((u) => u.id === params.row.assignedTo)?.name}
+                {params.row.assignedToName || users.find(u => u.id === params.row.assignedTo)?.name}
               </Typography>
               {params.row.dueDate && (
                 <Typography variant="caption" color="text.secondary">
@@ -725,11 +519,15 @@ const TaskAssignment = () => {
               )}
             </Box>
           ) : (
-            <Button variant="contained" onClick={() => {
-              console.log('Assign button clicked for disclosure:', params.row);
-              console.log('report_disclosure_id being passed:', params.row.report_disclosure_id);
-              handleOpenAssignDialog(params.row.report_disclosure_id.toString());
-            }} sx={{ bgcolor: '#147C65', '&:hover': { backgroundColor: '#1b5e20' }, textTransform: 'none', fontSize: '14px', borderRadius: '4px', py: 0.5 }}>
+            <Button
+              variant="contained"
+              onClick={() => {
+                console.log('Assign button clicked for disclosure:', params.row);
+                console.log('report_disclosure_id being passed:', params.row.report_disclosure_id);
+                handleOpenAssignDialog(params.row.report_disclosure_id.toString());
+              }}
+              sx={{ bgcolor: '#147C65', '&:hover': { backgroundColor: '#1b5e20' }, textTransform: 'none', fontSize: '14px', borderRadius: '4px', py: 0.5 }}
+            >
               {' '}
               Assign User{' '}
             </Button>
@@ -867,7 +665,7 @@ const TaskAssignment = () => {
           <DataGrid
             rows={filteredDisclosures}
             columns={columns}
-            getRowId={(row) => row.report_disclosure_id}
+            getRowId={row => row.report_disclosure_id}
             initialState={{
               pagination: {
                 paginationModel: { page: 0, pageSize: 5 }
@@ -934,7 +732,7 @@ const TaskAssignment = () => {
             variant="outlined"
             fullWidth
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -957,13 +755,13 @@ const TaskAssignment = () => {
               </TableHead>
               <TableBody>
                 {users
-                  .filter((user) => user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.department.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map((user) => (
-                    <TableRow key={user.id} onClick={() => handleSelectEmployee(user.id)} hover selected={selectedEmployeeId === user.id} sx={{ cursor: 'pointer' }}>
+                  .filter(user => user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.department.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map(user => (
+                    <TableRow key={user.id} onClick={() => handleSelectEmployee(user.org_user_id)} hover selected={selectedEmployeeId === user.org_user_id} sx={{ cursor: 'pointer' }}>
                       <TableCell padding="checkbox">
                         <Radio
-                          checked={selectedEmployeeId === user.id}
-                          onChange={() => handleSelectEmployee(user.id)}
+                          checked={selectedEmployeeId === user.org_user_id}
+                          onChange={() => handleSelectEmployee(user.org_user_id)}
                           value={user.id}
                           sx={{
                             '&.Mui-checked': {
@@ -1053,11 +851,11 @@ const TaskAssignment = () => {
                       mr: 1
                     }}
                   />
-                  <Typography variant="body2">{users.find((u) => u.id === selectedEmployeeId)?.name}</Typography>
+                  <Typography variant="body2">{users.find(u => u.org_user_id === selectedEmployeeId)?.name}</Typography>
                 </Box>
-                <Typography variant="body2">{users.find((u) => u.id === selectedEmployeeId)?.department}</Typography>
+                <Typography variant="body2">{users.find(u => u.org_user_id === selectedEmployeeId)?.department}</Typography>
                 <Typography variant="body2" sx={{ color: '#667085' }}>
-                  {users.find((u) => u.id === selectedEmployeeId)?.email}
+                  {users.find(u => u.org_user_id === selectedEmployeeId)?.email}
                 </Typography>
               </Box>
             )}
@@ -1071,7 +869,7 @@ const TaskAssignment = () => {
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
                 value={dueDate}
-                onChange={(newValue) => setDueDate(newValue)}
+                onChange={newValue => setDueDate(newValue)}
                 format="dd/MM/yyyy"
                 slotProps={{
                   textField: {
@@ -1091,7 +889,60 @@ const TaskAssignment = () => {
               />
             </LocalizationProvider>
           </Box>
+          
+          {/* Notes */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Notes
+            </Typography>
+            <TextField
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Enter Notes Here"
+              multiline
+              rows={4}
+              fullWidth
+              variant="outlined"
+              size="small"
+              sx={{
+                '.MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  fontSize: '14px'
+                }
+              }}
+            />
+          </Box>
 
+          {/* Choose Template */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              Choose Template
+            </Typography>
+            <TextField
+              select
+              value={selectedTemplate}
+              onChange={(e) => setSelectedTemplate(e.target.value)}
+              placeholder="Select"
+              fullWidth
+              variant="outlined"
+              size="small"
+              SelectProps={{
+                native: true,
+              }}
+              sx={{
+                '.MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  fontSize: '14px'
+                }
+              }}
+            >
+              <option value="">Select</option>
+              <option value="template1">Template 1</option>
+              <option value="template2">Template 2</option>
+              <option value="template3">Template 3</option>
+            </TextField>
+          </Box>
+          
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: '13px', mb: 4 }}>
             This template requires qualitative data.
           </Typography>
@@ -1200,11 +1051,11 @@ const TaskAssignment = () => {
                       mr: 1
                     }}
                   />
-                  <Typography variant="body2">{users.find((u) => u.id === selectedEmployeeId)?.name}</Typography>
+                  <Typography variant="body2">{users.find(u => u.org_user_id === selectedEmployeeId)?.name}</Typography>
                 </Box>
-                <Typography variant="body2">{users.find((u) => u.id === selectedEmployeeId)?.department}</Typography>
+                <Typography variant="body2">{users.find(u => u.org_user_id === selectedEmployeeId)?.department}</Typography>
                 <Typography variant="body2" sx={{ color: '#667085' }}>
-                  {users.find((u) => u.id === selectedEmployeeId)?.email}
+                  {users.find(u => u.org_user_id === selectedEmployeeId)?.email}
                 </Typography>
               </Box>
             )}
@@ -1223,7 +1074,7 @@ const TaskAssignment = () => {
               </Box>
               <TextField
                 value={monthlyDueDay}
-                onChange={(e) => setMonthlyDueDay(e.target.value)}
+                onChange={e => setMonthlyDueDay(e.target.value)}
                 placeholder="day of every month"
                 size="small"
                 sx={{
@@ -1245,13 +1096,66 @@ const TaskAssignment = () => {
             </Typography>
           </Box>
 
+          {/* Notes */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              Notes
+            </Typography>
+            <TextField
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Enter Notes Here"
+              multiline
+              rows={4}
+              fullWidth
+              variant="outlined"
+              size="small"
+              sx={{
+                '.MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  fontSize: '14px'
+                }
+              }}
+            />
+          </Box>
+
+          {/* Choose Template */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              Choose Template
+            </Typography>
+            <TextField
+              select
+              value={selectedTemplate}
+              onChange={(e) => setSelectedTemplate(e.target.value)}
+              placeholder="Select"
+              fullWidth
+              variant="outlined"
+              size="small"
+              SelectProps={{
+                native: true,
+              }}
+              sx={{
+                '.MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  fontSize: '14px'
+                }
+              }}
+            >
+              <option value="">Select</option>
+              <option value="template1">Template 1</option>
+              <option value="template2">Template 2</option>
+              <option value="template3">Template 3</option>
+            </TextField>
+          </Box>
+
           {currentDisclosureId && (
             <Box sx={{ mb: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                Disclosure: {disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId)?.disclosure_id}
+                Disclosure: {disclosures.find(d => d.report_disclosure_id.toString() === currentDisclosureId)?.disclosure_id}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '13px' }}>
-                {disclosures.find((d) => d.report_disclosure_id.toString() === currentDisclosureId)?.disclosure_description}
+                {disclosures.find(d => d.report_disclosure_id.toString() === currentDisclosureId)?.disclosure_description}
               </Typography>
             </Box>
           )}
