@@ -46,6 +46,8 @@ import ReportingChooseMateriality from "./Screens/MaterialityAssesment/Reporting
 import SelectMaterialTopics from "./Screens/MaterialityAssesment/SelectMaterialTopics.tsx";
 
 import ReportingSectorIndustryForm from "./Screens/StakeholderMaterialityAssessment/ReportingSectorIndustryForm.tsx";
+import ReportingTaskManagement from "./Screens/StakeholderMaterialityAssessment/reportingTaskManagement.tsx";
+
 import ReportEmail from "./Screens/StakeholderMaterialityAssessment/ReportingEmail.tsx";
 import ReportingScApprovalRequest from "./Screens/StakeholderMaterialityAssessment/ReportingScApprovalRequest.tsx";
 import SustainabilityManagerResponse from "./Screens/StakeholderMaterialityAssessment/SustainabilityManagerResponse.tsx";
@@ -487,7 +489,7 @@ function App() {
             path="/reporting-task-management/:reportId"
             element={
               <ProtectedRoute>
-                <TaskManagement />
+                <ReportingTaskManagement />
               </ProtectedRoute>
             }
           />
