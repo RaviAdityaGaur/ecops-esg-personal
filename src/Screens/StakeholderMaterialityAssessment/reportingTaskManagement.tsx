@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, List, ListItem, ListItemText, Chip, Grid, Avatar, IconButton, Collapse, Dialog, DialogTitle, DialogContent, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Radio, Button, InputAdornment, TextareaAutosize } from '@mui/material';
+import { Box, Typography, Paper, List, ListItem, ListItemText, Chip, Grid, IconButton, Collapse, Dialog, DialogTitle, DialogContent, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Radio, Button, InputAdornment } from '@mui/material';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SearchIcon from '@mui/icons-material/Search';
-import CloseIcon from '@mui/icons-material/Close';
-import { DragDropContext, Draggable, Droppable, type DropResult, type DroppableProvided, type DraggableProvided } from 'react-beautiful-dnd';
+import { DragDropContext, Draggable, Droppable, type DropResult, type DraggableProvided, type DroppableProvided } from 'react-beautiful-dnd';
 import SidebarHeader from '../../Components/SidebarHeader';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import format from 'date-fns/format';
 import { useParams } from 'react-router-dom';
 import { api } from '../common';
 
@@ -247,14 +245,13 @@ const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ open, onClose, task, on
   // Reset form when dialog opens with a new task
   React.useEffect(() => {
     if (task) {
-      setTitle(task.title);
+      setTitle(task.title || `Task ${task.task}`);
 
-      // Use the task's description if it exists, otherwise use default text
+      // Use the task's description if it exists, otherwise use requested_data
       if (task.description) {
         setDescription(task.description);
       } else {
-        const defaultDescription = task.id === 1 ? 'Qualitative/Quantitative\nExample - Please prove data for carbon Emission.' : 'Specify which information is unavailable or incomplete. When the information is incomplete, specify which part is missing (e.g., specify the entities for which the information is missing). Explain why the required information is unavailable or incomplete. Describe the steps being taken and the expected time frame to obtain the information.';
-        setDescription(defaultDescription);
+        setDescription(task.requested_data || 'No description available');
       }
     }
   }, [task]);
@@ -378,16 +375,150 @@ const EditTaskDialog: React.FC<EditTaskDialogProps> = ({ open, onClose, task, on
   );
 };
 
-// Task Interface
+// Task Detail Dialog Component
+interface TaskDetailDialogProps {
+  open: boolean;
+  onClose: () => void;
+  task: Task | null;
+}
+
+const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task }) => {
+  if (!task) return null;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: '12px',
+          maxWidth: '500px',
+          fontFamily: "'Inter', sans-serif",
+          '& *': {
+            fontFamily: "'Inter', sans-serif"
+          }
+        }
+      }}
+    >
+      <Box sx={{ p: 3 }}>
+        {/* Header with title and due date */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '18px', flex: 1, mr: 2 }}>
+            {task.title || task.requested_data || `Task ${task.task}`}
+          </Typography>
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+              Due Date :
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#d93025', fontWeight: 500 }}>
+              {formatDate(task.due_date)}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Description */}
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.6 }}>
+          {task.requested_data || task.description || 'This is a description of the Disclosure.'}
+        </Typography>
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Action
+            </Typography>
+            <Button
+              variant="outlined"
+              sx={{
+                borderRadius: '8px',
+                px: 3,
+                py: 1,
+                border: '1px solid #147C65',
+                color: '#147C65',
+                textTransform: 'none',
+                fontWeight: 500,
+                '&:hover': {
+                  bgcolor: 'rgba(20, 124, 101, 0.05)',
+                  borderColor: '#147C65'
+                }
+              }}
+            >
+              Add/Update Data
+            </Button>
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Request Data (Optional)
+            </Typography>
+            <Button
+              variant="outlined"
+              sx={{
+                borderRadius: '8px',
+                px: 3,
+                py: 1,
+                border: '1px solid #666',
+                color: '#666',
+                textTransform: 'none',
+                fontWeight: 500,
+                '&:hover': {
+                  bgcolor: 'rgba(102, 102, 102, 0.05)',
+                  borderColor: '#666'
+                }
+              }}
+            >
+              Assign to User
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Close Button */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            sx={{
+              borderRadius: '8px',
+              px: 4,
+              py: 1,
+              border: '1px solid #666',
+              color: '#666',
+              textTransform: 'none',
+              fontWeight: 500,
+              '&:hover': {
+                bgcolor: 'rgba(102, 102, 102, 0.05)',
+                borderColor: '#666'
+              }
+            }}
+          >
+            Close
+          </Button>
+        </Box>
+      </Box>
+    </Dialog>
+  );
+};
+
+// Task Interface - Updated to match API response
 interface Task {
   id: number;
-  title: string;
-  assignedTo: string;
-  due_date: string;
-  status: string;
+  title?: string;
+  created_at?: string;
+  updated_at?: string;
+  requested_data: string;
   priority: string;
-  column: 'pending' | 'in_progress' | 'completed';
-  description?: string; // Add description field
+  due_date: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  is_recurring?: boolean;
+  recurrence_type?: string;
+  recurrence_day?: number;
+  task: number;
+  assigned_to: number;
+  assigned_by?: number;
+  assignedToName?: string; // For display purposes
+  description?: string; // For display purposes
 }
 
 // Updated task data with column property
@@ -460,10 +591,25 @@ interface Task {
 // TaskList Component
 interface TaskListProps {
   tasks: Task[];
-  onOpenAssignDialog: (taskId: number) => void;
+  onOpenTaskDetail: (taskId: number) => void; // Add new prop for task detail dialog
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenAssignDialog }) => {
+// Format date to DD/MM/YYYY format
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  
+  // If already in DD/MM/YYYY format, return as is
+  if (dateString.includes('/')) return dateString;
+  
+  // If in ISO format (YYYY-MM-DD), convert to DD/MM/YYYY
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
   const [editTaskId, setEditTaskId] = useState<number | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
 
@@ -488,12 +634,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenAssignDialog }) => {
     }
 
     onChangePriority(taskId, newPriority);
-  };
-
-  const handleEditClick = (e: React.MouseEvent, taskId: number) => {
-    e.stopPropagation(); // Prevent dragging when clicking edit
-    setEditTaskId(taskId);
-    setEditDialogOpen(true);
   };
 
   const handleSaveEdit = (title: string, description: string) => {
@@ -548,83 +688,52 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenAssignDialog }) => {
                           />
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Chip
-                              label={task.assignedTo ? task.due_date : ''}
+                              label={task.assignedToName ? formatDate(task.due_date) : formatDate(task.due_date)}
                               size="small"
                               sx={{
                                 height: '24px',
-                                bgcolor: task.assignedTo ? '#fce8e8' : 'transparent',
-                                color: task.assignedTo ? '#d93025' : 'transparent',
+                                bgcolor: '#fce8e8',
+                                color: '#d93025',
                                 mr: 1,
                                 borderRadius: '4px',
-                                visibility: task.assignedTo ? 'visible' : 'hidden'
+                                visibility: task.due_date ? 'visible' : 'hidden'
                               }}
                             />
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
-                              {/* User Avatar - Dynamically rendered based on assignment */}
-                              {task.assignedTo ? (
-                                <Avatar
-                                  sx={{
-                                    width: 24,
-                                    height: 24,
-                                    bgcolor: 'green',
-                                    fontSize: '12px',
-                                    cursor: 'pointer'
-                                  }}
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    onOpenAssignDialog(task.id);
-                                  }}
-                                >
-                                  {task.assignedTo.charAt(0)}
-                                </Avatar>
-                              ) : (
-                                <Avatar
-                                  sx={{
-                                    width: 24,
-                                    height: 24,
-                                    bgcolor: '#F5F5FA',
-                                    color: '#666',
-                                    fontSize: '12px',
-                                    cursor: 'pointer'
-                                  }}
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    onOpenAssignDialog(task.id);
-                                  }}
-                                >
-                                  +
-                                </Avatar>
-                              )}
-                              <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
-                                {/* Edit icon - keeping the existing edit icon functionality */}
-                                <Box
-                                  component="span"
-                                  onClick={e => handleEditClick(e, task.id)}
-                                  sx={{
-                                    width: 24,
-                                    height: 24,
-                                    ml: 0.5,
-                                    bgcolor: '#F5F5FA',
-                                    borderRadius: '4px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#000000" />
-                                  </svg>
-                                </Box>
+                              {/* Single Action Icon */}
+                              <Box
+                                component="span"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  onOpenTaskDetail(task.id);
+                                }}
+                                sx={{
+                                  width: 24,
+                                  height: 24,
+                                  bgcolor: '#F5F5FA',
+                                  borderRadius: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  '&:hover': {
+                                    bgcolor: '#E5E7EB'
+                                  }
+                                }}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M12 8V12L15 15" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <circle cx="12" cy="12" r="9" stroke="#666" strokeWidth="2"/>
+                                </svg>
                               </Box>
                             </Box>
                           </Box>
                         </Box>
                         <Typography variant="subtitle1" fontWeight="medium">
-                          {task.task}
+                          {task.requested_data || `Task ${task.task}`}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          {task.description || (task.id === 1 ? 'Qualitative/Quantitative\nExample - Please prove data for carbon Emission.' : 'Specify which information is unavailable or incomplete. When the information is incomplete, specify which part is missing (e.g., specify the entities for which the information is missing). Explain why the required information is unavailable or incomplete. Describe the steps being taken and the expected time frame to obtain t...')}
+                          {task.description || (task.id === 1 ? 'description will go here' : 'default des')}
                         </Typography>
                       </Box>
                     </Paper>
@@ -664,9 +773,13 @@ const ReportingTaskManagement: React.FC = () => {
   const [expanded, setExpanded] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dueDateDialogOpen, setDueDateDialogOpen] = useState(false);
+  const [taskDetailDialogOpen, setTaskDetailDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedDueDate, setSelectedDueDate] = useState<string>('');
+
+  // Add debouncing for API calls
+  const pendingUpdates = React.useRef<Map<number, NodeJS.Timeout>>(new Map());
 
   const getColumnTasks = (column: ColumnId) => {
     return tasks.filter(task => task.status === column);
@@ -706,51 +819,93 @@ const ReportingTaskManagement: React.FC = () => {
   //   );
   // };
 
-  const handleDragEnd = (result: DropResult) => {
-  const { destination, source, draggableId } = result;
+  const handleDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
 
-  if (!destination) return;
+    if (!destination) return;
 
-  if (
-    destination.droppableId === source.droppableId &&
-    destination.index === source.index
-  ) {
-    return;
-  }
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
 
-  const [prefix, idStr] = draggableId.split("-");
-  const taskId = Number.parseInt(idStr);
-  if (isNaN(taskId)) return;
+    const [, idStr] = draggableId.split("-");
+    const taskId = Number.parseInt(idStr);
+    if (isNaN(taskId)) return;
 
-  const targetColumn = destination.droppableId as ColumnId;
+    const targetColumn = destination.droppableId as ColumnId;
 
-  setTasks(prevTasks =>
-    prevTasks.map(task =>
-      task.id === taskId
-        ? {
-            ...task,
-            column: targetColumn,
-            status: targetColumn // assuming your status and column names match
-          }
-        : task
-    )
-  );
-};
+    // Get the current task to preserve its priority
+    const currentTask = tasks.find(task => task.id === taskId);
+    if (!currentTask) return;
 
-  
-  const handleOpenDialog = (taskId: number) => {
+    const previousStatus = currentTask.status;
+
+    // Optimistic update: Update UI immediately
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: targetColumn
+            }
+          : task
+      )
+    );
+
+    console.log(`Task ${taskId} status optimistically updated to ${targetColumn}`);
+
+    // Then update via API in the background
+    try {
+      await api.post('esg/task/update-task-status/', {
+        json: {
+          id: taskId,
+          status: targetColumn,
+          priority: currentTask.priority
+        }
+      });
+
+      console.log(`Task ${taskId} status confirmed on server: ${targetColumn}`);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      
+      // Revert the optimistic update on error
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId
+            ? {
+                ...task,
+                status: previousStatus // Revert to previous status
+              }
+            : task
+        )
+      );
+
+      // Show user-friendly error message
+      console.warn(`Failed to update task ${taskId}. Reverted to ${previousStatus}`);
+      // You could add a toast notification here
+    }
+  };
+
+  const handleOpenTaskDetail = (taskId: number) => {
     setSelectedTaskId(taskId);
-    setDialogOpen(true);
-    // Reset selections when opening a new assignment dialog
-    setSelectedEmployee(null);
-    setSelectedDueDate('');
+    setTaskDetailDialogOpen(true);
+  };
+
+  const handleCloseTaskDetail = () => {
+    setTaskDetailDialogOpen(false);
+    setSelectedTaskId(null);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setDueDateDialogOpen(false);
+    setTaskDetailDialogOpen(false);
     setSelectedEmployee(null);
     setSelectedDueDate('');
+    setSelectedTaskId(null);
   };
 
   const handleAssignUser = (employee: Employee | null) => {
@@ -784,8 +939,8 @@ const ReportingTaskManagement: React.FC = () => {
           task.id === selectedTaskId
             ? {
                 ...task,
-                assignedTo: selectedEmployee.name,
-                dueDate: selectedDueDate
+                assignedToName: selectedEmployee.name,
+                due_date: selectedDueDate
               }
             : task
         )
@@ -814,31 +969,60 @@ const ReportingTaskManagement: React.FC = () => {
       }
     };
     fetchReportingTask();
+
+    // Cleanup pending debounced API calls on unmount
+    return () => {
+      pendingUpdates.current.forEach(timeout => clearTimeout(timeout));
+      pendingUpdates.current.clear();
+    };
   }, [reportId]);
 
-  // Add description field to tasks
-  React.useEffect(() => {
-    // Only add descriptions if they don't exist yet
-    setTasks(prevTasks =>
-      prevTasks.map(task => {
-        if (task.description) return task; // Don't override existing descriptions
-
-        return {
-          ...task,
-          description: task.id === 1 ? 'Qualitative/Quantitative\nExample - Please prove data for carbon Emission.' : 'Specify which information is unavailable or incomplete. When the information is incomplete, specify which part is missing...'
-        };
-      })
-    );
-  }, []);
-
   // Add priority change handler
-  const handleChangePriority = (taskId: number, newPriority: string) => {
-    setTasks(prevTasks => prevTasks.map(task => (task.id === taskId ? { ...task, priority: newPriority } : task)));
+  const handleChangePriority = async (taskId: number, newPriority: string) => {
+    // Get the current task to preserve its status
+    const currentTask = tasks.find(task => task.id === taskId);
+    if (!currentTask) return;
+
+    const previousPriority = currentTask.priority;
+
+    // Optimistic update: Update UI immediately
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === taskId ? { ...task, priority: newPriority } : task
+      )
+    );
+
+    console.log(`Task ${taskId} priority optimistically updated to ${newPriority}`);
+
+    // Then update via API in the background
+    try {
+      await api.post('esg/task/update-task-status/', {
+        json: {
+          id: taskId,
+          status: currentTask.status, // Keep current status
+          priority: newPriority
+        }
+      });
+
+      console.log(`Task ${taskId} priority confirmed on server: ${newPriority}`);
+    } catch (error) {
+      console.error('Error updating task priority:', error);
+      
+      // Revert the optimistic update on error
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? { ...task, priority: previousPriority } : task
+        )
+      );
+
+      console.warn(`Failed to update task ${taskId} priority. Reverted to ${previousPriority}`);
+      // You could add a toast notification here
+    }
   };
 
   // Add edit task handler
   const handleEditTask = (taskId: number, title: string, description: string) => {
-    setTasks(prevTasks => prevTasks.map(task => (task.id === taskId ? { ...task, title, description } : task)));
+    setTasks(prevTasks => prevTasks.map(task => (task.id === taskId ? { ...task, title, description, requested_data: description } : task)));
   };
 
   const taskContextValue = {
@@ -850,7 +1034,7 @@ const ReportingTaskManagement: React.FC = () => {
 
   return (
     <TaskContext.Provider value={taskContextValue}>
-      <SidebarHeader title="Task Management">
+      <SidebarHeader>
         <Box sx={{ width: '100%', mt: 2, height: 'calc(100vh - 100px)' }}>
           <Box sx={{ width: '100%', bgcolor: 'background.paper', borderRadius: 2, boxShadow: 'none', p: 1.5, mb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -918,14 +1102,14 @@ const ReportingTaskManagement: React.FC = () => {
                           style={{
                             minHeight: '200px',
                             height: '100%',
-                            maxHeight: 'calc(100vh - 280px)', // Reduced height to prevent scrolling
+                            maxHeight: 'calc(100vh - 280px)',
                             overflowY: 'auto',
                             msOverflowStyle: 'none',
                             scrollbarWidth: 'none'
                           }}
                           className="hide-scrollbar"
                         >
-                          <TaskList tasks={getColumnTasks('pending')} onOpenAssignDialog={handleOpenDialog} />
+                          <TaskList tasks={getColumnTasks('pending')} onOpenTaskDetail={handleOpenTaskDetail} />
                           {provided.placeholder}
                         </div>
                       )}
@@ -987,13 +1171,13 @@ const ReportingTaskManagement: React.FC = () => {
                           style={{
                             minHeight: '200px',
                             height: '100%',
-                            maxHeight: 'calc(100vh - 280px)', // Reduced height to prevent scrolling
+                            maxHeight: 'calc(100vh - 280px)',
                             overflowY: 'auto',
                             msOverflowStyle: 'none',
                             scrollbarWidth: 'none'
                           }}
                         >
-                          <TaskList tasks={getColumnTasks('in_progress')} onOpenAssignDialog={handleOpenDialog} />
+                          <TaskList tasks={getColumnTasks('in_progress')} onOpenTaskDetail={handleOpenTaskDetail} />
                           {provided.placeholder}
                         </div>
                       )}
@@ -1002,7 +1186,7 @@ const ReportingTaskManagement: React.FC = () => {
                 </Paper>
               </Grid>
 
-              {/* Completion approved Column */}
+              {/* Completion Approved Column */}
               <Grid item xs={12} md={4} sx={{ height: '100%' }}>
                 <Paper
                   sx={{
@@ -1011,8 +1195,8 @@ const ReportingTaskManagement: React.FC = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: '10px',
-                    bgcolor: '#40C79A24',
-                    borderTop: '8px solid #40C79A'
+                    bgcolor: '#147C6524',
+                    borderTop: '8px solid #147C65'
                   }}
                 >
                   <Box
@@ -1030,7 +1214,7 @@ const ReportingTaskManagement: React.FC = () => {
                         size="small"
                         sx={{
                           height: '20px',
-                          bgcolor: '#40C79A',
+                          bgcolor: '#147C65',
                           color: 'white',
                           fontWeight: 600,
                           fontSize: '0.75rem'
@@ -1055,13 +1239,13 @@ const ReportingTaskManagement: React.FC = () => {
                           style={{
                             minHeight: '200px',
                             height: '100%',
-                            maxHeight: 'calc(100vh - 280px)', // Reduced height to prevent scrolling
+                            maxHeight: 'calc(100vh - 280px)',
                             overflowY: 'auto',
                             msOverflowStyle: 'none',
                             scrollbarWidth: 'none'
                           }}
                         >
-                          <TaskList tasks={getColumnTasks('completed')} onOpenAssignDialog={handleOpenDialog} />
+                          <TaskList tasks={getColumnTasks('completed')} onOpenTaskDetail={handleOpenTaskDetail} />
                           {provided.placeholder}
                         </div>
                       )}
@@ -1076,11 +1260,16 @@ const ReportingTaskManagement: React.FC = () => {
         {/* User Assignment Dialog */}
         <UserAssignmentDialog open={dialogOpen} onClose={handleCloseDialog} onAssign={handleAssignUser} />
 
+        {/* Task Detail Dialog */}
+        <TaskDetailDialog 
+          open={taskDetailDialogOpen} 
+          onClose={handleCloseTaskDetail} 
+          task={tasks.find(task => task.id === selectedTaskId) || null}
+        />
+
         {/* Due Date Selection Dialog */}
         <Dialog
           open={dueDateDialogOpen}
-          onClose={handleCloseDialog}
-          maxWidth="md"
           fullWidth
           PaperProps={{
             sx: {
