@@ -271,14 +271,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/report-email/:reportId"
-            element={
-              <ProtectedRoute>
-                <CustomEmail />
-              </ProtectedRoute>
-            }
-          />
+          
           <Route
             path="/disclosure-rating"
             element={
