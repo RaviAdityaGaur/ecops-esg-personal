@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, List, ListItem, ListItemText, Chip, Grid, IconButton, Collapse, Dialog, DialogTitle, DialogContent, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Radio, Button, InputAdornment } from '@mui/material';
+import { Box, Typography, Paper, List, ListItem, ListItemText, Chip, Grid, IconButton, Collapse, Dialog, DialogTitle, DialogContent, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Radio, Button, InputAdornment, DialogActions, FormControlLabel, RadioGroup } from '@mui/material';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SearchIcon from '@mui/icons-material/Search';
@@ -31,200 +31,381 @@ const StrictModeDroppable = ({ children, ...props }: any) => {
 };
 
 // User Assignment Dialog Component
-interface Employee {
-  id: number;
-  name: string;
-  empId: string;
-  email: string;
-}
-
 interface UserAssignmentDialogProps {
   open: boolean;
   onClose: () => void;
-  onAssign: (employee: Employee | null) => void;
+  onAssign: (employeeId: string, assignmentType: 'one-time' | 'recurring', dueDate: Date | null, monthlyDueDay: string, notes: string) => void;
+  currentTask: Task | null;
+  users: { id: string; name: string; department: string; email: string; org_user_id: string }[];
 }
 
-const employees: Employee[] = [
-  { id: 1, name: 'Anish Singh', empId: '1021', email: 'anishsingh05@gmail.com' },
-  { id: 2, name: 'Jayesh Singh', empId: '1021', email: 'anishsingh05@gmail.com' },
-  { id: 3, name: 'Sh', empId: '1021', email: 'anishsingh05@gmail.com' },
-  { id: 4, name: 'Vaibhav Singh', empId: '1021', email: 'anishsingh05@gmail.com' },
-  { id: 5, name: 'Anish Singh', empId: '1021', email: 'anishsingh05@gmail.com' }
-];
+const UserAssignmentDialog: React.FC<UserAssignmentDialogProps> = ({ 
+  open, 
+  onClose, 
+  onAssign, 
+  currentTask, 
+  users 
+}) => {
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [monthlyDueDay, setMonthlyDueDay] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [assignmentType, setAssignmentType] = useState<'one-time' | 'recurring'>('one-time');
+  const [dialogStep, setDialogStep] = useState<'user-selection' | 'assignment-details'>('user-selection');
+  const [loading, setLoading] = useState(false);
 
-const UserAssignmentDialog: React.FC<UserAssignmentDialogProps> = ({ open, onClose, onAssign }) => {
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      if (currentTask && currentTask.assigned_to) {
+        // Pre-fill form with existing assignment data for editing
+        setSelectedEmployeeId(currentTask.assigned_to.toString());
+        setDueDate(currentTask.due_date ? new Date(currentTask.due_date) : null);
+        setAssignmentType('one-time'); // Default for editing
+        setMonthlyDueDay('');
+        setNotes('');
+        setSelectedTemplate('');
+      } else {
+        // Reset form for new assignment
+        setSelectedEmployeeId(null);
+        setDueDate(null);
+        setMonthlyDueDay('');
+        setNotes('');
+        setSelectedTemplate('');
+        setAssignmentType('one-time');
+      }
+      setSearchQuery('');
+      setDialogStep('user-selection');
+    }
+  }, [open, currentTask]);
 
-  const handleSelectEmployee = (employee: Employee) => {
-    setSelectedEmployee(employee);
+  const handleSelectEmployee = (employeeId: string) => {
+    setSelectedEmployeeId(employeeId);
   };
 
-  const handleAssign = () => {
-    onAssign(selectedEmployee);
-    // We don't close the dialog here anymore as we'll show the due date dialog next
-    // The main component handles the dialog visibility now
+  const handleNextToAssignmentDetails = () => {
+    if (!selectedEmployeeId) {
+      alert('Please select a user first.');
+      return;
+    }
+    setDialogStep('assignment-details');
   };
 
-  const filteredEmployees = employees.filter(employee => employee.name.toLowerCase().includes(searchQuery.toLowerCase()) || employee.empId.includes(searchQuery) || employee.email.toLowerCase().includes(searchQuery.toLowerCase()));
+  const handleBackToUserSelection = () => {
+    setDialogStep('user-selection');
+  };
+
+  const handleAssignEmployee = async () => {
+    if (!selectedEmployeeId) return;
+
+    // Validate required fields based on assignment type
+    if (assignmentType === 'one-time' && !dueDate) {
+      alert('Please select a due date for one-time assignment.');
+      return;
+    }
+    
+    if (assignmentType === 'recurring' && !monthlyDueDay.trim()) {
+      alert('Please enter the monthly due day for recurring assignment.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onAssign(selectedEmployeeId, assignmentType, dueDate, monthlyDueDay, notes);
+      onClose();
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      alert('Error assigning task. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedEmployeeId(null);
+    setSearchQuery('');
+    setDueDate(null);
+    setMonthlyDueDay('');
+    setNotes('');
+    setSelectedTemplate('');
+    setAssignmentType('one-time');
+    setDialogStep('user-selection');
+    onClose();
+  };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: '12px',
-          maxWidth: '600px',
-          fontFamily: "'Inter', sans-serif", // Add Inter font to all dialog content
-          '& *': {
-            // This will apply to all elements inside the dialog
-            fontFamily: "'Inter', sans-serif"
-          }
-        }
-      }}
-    >
-      <Grid sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 2 }}>
-        <DialogTitle
-          sx={{
-            fontWeight: 600,
-            fontSize: '20px'
-          }}
-        >
-          Assign to
-        </DialogTitle>
+    <Dialog open={open} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <DialogTitle sx={{ borderBottom: '1px solid #eee', pb: 2 }}>
+        <Typography variant="h6" component="div">
+          {dialogStep === 'user-selection' ? 'Select User' : 'Assignment Details'}
+        </Typography>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 3 }}>
+        {dialogStep === 'user-selection' ? (
+          <>
+            <TextField
+              placeholder="Search..."
+              variant="outlined"
+              fullWidth
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                )
+              }}
+              sx={{ mb: 3 }}
+            />
 
-        <Box sx={{ mr: 2, flexGrow: 0.5 }}>
-          <TextField
-            fullWidth
-            placeholder="Search Emp ID or Name"
-            variant="outlined"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <SearchIcon sx={{ color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
-              sx: {
-                borderRadius: '100px',
-                bgcolor: 'background.paper',
-                height: '36px',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-                '& fieldset': {
-                  borderColor: '#E2E8F0'
-                },
-                '&:hover fieldset': {
-                  borderColor: '#E2E8F0'
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#E2E8F0 !important',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                },
-                '& .MuiOutlinedInput-input': {
-                  // Reduced padding
-                }
-              }
-            }}
-          />
-        </Box>
-      </Grid>
+            <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+              <Table>
+                <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableRow>
+                    <TableCell padding="checkbox" width="5%"></TableCell>
+                    <TableCell width="35%">Name</TableCell>
+                    <TableCell width="30%">Department</TableCell>
+                    <TableCell width="30%">Email</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users
+                    .filter(user => 
+                      user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                      user.department.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map(user => (
+                      <TableRow 
+                        key={user.id} 
+                        onClick={() => handleSelectEmployee(user.org_user_id)} 
+                        hover 
+                        selected={selectedEmployeeId === user.org_user_id} 
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <TableCell padding="checkbox">
+                          <Radio
+                            checked={selectedEmployeeId === user.org_user_id}
+                            onChange={() => handleSelectEmployee(user.org_user_id)}
+                            value={user.id}
+                            sx={{
+                              '&.Mui-checked': {
+                                color: '#147C65'
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.department}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
+        ) : (
+          <Box sx={{ p: 2 }}>
+            {/* Selected User Info */}
+            <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: '#f8f9fa' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, color: '#666' }}>
+                Selected User:
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                {users.find(u => u.org_user_id === selectedEmployeeId)?.name || 'Unknown User'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {users.find(u => u.org_user_id === selectedEmployeeId)?.department} • {users.find(u => u.org_user_id === selectedEmployeeId)?.email}
+              </Typography>
+            </Box>
 
-      <DialogContent sx={{ p: 0 }}>
-        <TableContainer sx={{ maxHeight: '400px' }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow sx={{ height: '40px', '& th': { borderBottom: '2px solid rgba(224, 224, 224, 1)', mb: 1 } }}>
-                <TableCell width="5%" />
-                <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.7rem', py: 1 }}>Employee Name</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.7rem', py: 1 }}>EMP ID</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.7rem', py: 1 }}>EMAIL ID</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredEmployees.map(employee => (
-                <TableRow
-                  key={employee.id}
-                  hover
-                  onClick={() => handleSelectEmployee(employee)}
-                  sx={{
-                    cursor: 'pointer',
-                    borderBottom: '1px solid',
-                    borderColor: 'divider'
-                  }}
-                >
-                  <TableCell padding="checkbox">
-                    <Radio
-                      checked={selectedEmployee?.id === employee.id}
-                      onChange={() => handleSelectEmployee(employee)}
-                      sx={{
-                        color: '#65558F',
-                        '&.Mui-checked': {
-                          color: '#65558F'
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+              Assignment Details
+            </Typography>
+
+            {/* Assignment Type Selection */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                Assignment Type
+              </Typography>
+              <RadioGroup
+                value={assignmentType}
+                onChange={(e) => {
+                  setAssignmentType(e.target.value as 'one-time' | 'recurring');
+                  setDueDate(null);
+                  setMonthlyDueDay('');
+                }}
+                row
+              >
+                <FormControlLabel 
+                  value="one-time" 
+                  control={<Radio sx={{ '&.Mui-checked': { color: '#147C65' } }} />} 
+                  label="One Time" 
+                />
+                <FormControlLabel 
+                  value="recurring" 
+                  control={<Radio sx={{ '&.Mui-checked': { color: '#147C65' } }} />} 
+                  label="Recurring" 
+                />
+              </RadioGroup>
+            </Box>
+
+            {/* Date Selection based on Assignment Type */}
+            {assignmentType === 'one-time' ? (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                  Due Date
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    value={dueDate}
+                    onChange={newValue => setDueDate(newValue)}
+                    format="dd/MM/yyyy"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        variant: 'outlined',
+                        size: 'small',
+                        placeholder: 'DD/MM/YYYY',
+                        sx: {
+                          '.MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                            fontSize: '14px'
+                          }
                         }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>{employee.name}</TableCell>
-                  <TableCell>{employee.empId}</TableCell>
-                  <TableCell>{employee.email}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                      }
+                    }}
+                    disablePast
+                  />
+                </LocalizationProvider>
+              </Box>
+            ) : (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                  Monthly Due Day
+                </Typography>
+                <TextField
+                  value={monthlyDueDay}
+                  onChange={e => setMonthlyDueDay(e.target.value)}
+                  placeholder="Enter day of month (1-31)"
+                  type="number"
+                  inputProps={{ min: 1, max: 31 }}
+                  size="small"
+                  sx={{
+                    maxWidth: '200px',
+                    '.MuiOutlinedInput-root': {
+                      borderRadius: 1,
+                      fontSize: '14px'
+                    }
+                  }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  This will recur monthly until the reporting period ends on 31 Dec 2025
+                </Typography>
+              </Box>
+            )}
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 2,
-            p: 2,
-            backgroundColor: '#F8FAFC',
-            mt: 10
-          }}
-        >
-          <Button
-            variant="outlined"
-            onClick={onClose}
-            sx={{
-              borderRadius: '10px',
-              px: 4,
-              py: 1,
-              border: 'solid #373737',
-              color: '#373737',
-              textTransform: 'none',
-              fontWeight: 500
-            }}
-          >
-            Back
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleAssign}
-            disabled={!selectedEmployee}
-            sx={{
-              borderRadius: '10px',
-              px: 4,
-              py: 1,
-              border: 'solid #147C65',
-              color: '#147C65',
-              textTransform: 'none',
-              fontWeight: 500,
-              bgcolor: 'white',
-              '&:hover': {
-                bgcolor: 'white',
-                opacity: 0.9
-              }
-            }}
-          >
-            Next
-          </Button>
-        </Box>
+            {/* Notes */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                Notes
+              </Typography>
+              <TextField
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Enter Notes Here"
+                multiline
+                rows={3}
+                fullWidth
+                variant="outlined"
+                size="small"
+                sx={{
+                  '.MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                    fontSize: '14px'
+                  }
+                }}
+              />
+            </Box>
+
+            {/* Choose Template */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                Choose Template
+              </Typography>
+              <TextField
+                select
+                value={selectedTemplate}
+                onChange={(e) => setSelectedTemplate(e.target.value)}
+                placeholder="Select"
+                fullWidth
+                variant="outlined"
+                size="small"
+                SelectProps={{
+                  native: true,
+                }}
+                sx={{
+                  '.MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                    fontSize: '14px'
+                  }
+                }}
+              >
+                <option value="">Select</option>
+                <option value="template1">Template 1</option>
+                <option value="template2">Template 2</option>
+                <option value="template3">Template 3</option>
+              </TextField>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '13px' }}>
+              This template requires {assignmentType === 'one-time' ? 'qualitative' : 'quantitative'} data.
+            </Typography>
+          </Box>
+        )}
       </DialogContent>
+      <DialogActions sx={{ borderTop: '1px solid #eee', p: 2 }}>
+        {dialogStep === 'user-selection' ? (
+          <>
+            <Button onClick={handleCloseDialog} sx={{ color: '#147C65', borderColor: '#147C65', '&:hover': { borderColor: '#1b5e20' } }} variant="outlined">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleNextToAssignmentDetails} 
+              disabled={!selectedEmployeeId} 
+              variant="contained" 
+              sx={{ bgcolor: '#147C65', '&:hover': { bgcolor: '#1b5e20' } }}
+            >
+              Next
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={handleBackToUserSelection} sx={{ color: '#147C65', borderColor: '#147C65', '&:hover': { borderColor: '#1b5e20' } }} variant="outlined">
+              Back
+            </Button>
+            <Button onClick={handleCloseDialog} sx={{ color: '#666' }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAssignEmployee} 
+              disabled={
+                !selectedEmployeeId || 
+                loading ||
+                (assignmentType === 'one-time' && !dueDate) ||
+                (assignmentType === 'recurring' && !monthlyDueDay.trim())
+              } 
+              variant="contained" 
+              sx={{ bgcolor: '#147C65', '&:hover': { bgcolor: '#1b5e20' } }}
+            >
+              {loading ? 'Assigning...' : 'Assign'}
+            </Button>
+          </>
+        )}
+      </DialogActions>
     </Dialog>
   );
 };
@@ -380,9 +561,10 @@ interface TaskDetailDialogProps {
   open: boolean;
   onClose: () => void;
   task: Task | null;
+  onAssignUser?: (taskId: number) => void; // Add this prop
 }
 
-const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task }) => {
+const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task, onAssignUser }) => {
   if (!task) return null;
 
   return (
@@ -455,6 +637,12 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
             </Typography>
             <Button
               variant="outlined"
+              onClick={() => {
+                if (task && onAssignUser) {
+                  onAssignUser(task.id);
+                  onClose(); // Close the task detail dialog
+                }
+              }}
               sx={{
                 borderRadius: '8px',
                 px: 3,
@@ -469,7 +657,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
                 }
               }}
             >
-              Assign to User
+              {task?.assigned_to ? 'Edit Assignment' : 'Assign to User'}
             </Button>
           </Box>
         </Box>
@@ -775,8 +963,11 @@ const ReportingTaskManagement: React.FC = () => {
   const [dueDateDialogOpen, setDueDateDialogOpen] = useState(false);
   const [taskDetailDialogOpen, setTaskDetailDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [selectedDueDate, setSelectedDueDate] = useState<string>('');
+  const [users, setUsers] = useState<{ id: string; name: string; department: string; email: string; org_user_id: string }[]>([]);
+  const [currentTaskForAssignment, setCurrentTaskForAssignment] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Add debouncing for API calls
   const pendingUpdates = React.useRef<Map<number, NodeJS.Timeout>>(new Map());
@@ -899,6 +1090,15 @@ const ReportingTaskManagement: React.FC = () => {
     setSelectedTaskId(null);
   };
 
+  const handleOpenAssignmentDialog = (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setSelectedTaskId(taskId);
+      setCurrentTaskForAssignment(task);
+      setDialogOpen(true);
+    }
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setDueDateDialogOpen(false);
@@ -906,16 +1106,60 @@ const ReportingTaskManagement: React.FC = () => {
     setSelectedEmployee(null);
     setSelectedDueDate('');
     setSelectedTaskId(null);
+    setCurrentTaskForAssignment(null);
   };
 
-  const handleAssignUser = (employee: Employee | null) => {
-    if (employee && selectedTaskId) {
-      setSelectedEmployee(employee);
-      // Instead of updating the task right away, show the due date dialog
-      setDialogOpen(false);
-      setDueDateDialogOpen(true);
-    } else {
-      handleCloseDialog();
+  const handleAssignUser = async (employeeId: string, assignmentType: 'one-time' | 'recurring', dueDate: Date | null, monthlyDueDay: string, notes: string) => {
+    if (!selectedTaskId || !employeeId) return;
+
+    try {
+      setLoading(true);
+      
+      // Prepare the payload for the assignment API
+      const payload = {
+        report_disclosure_id: selectedTaskId, // Using task ID as report_disclosure_id
+        assigned_to: parseInt(employeeId),
+        request_data: 'nothing',
+        due_date: assignmentType === 'one-time' 
+          ? (dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+          : `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${monthlyDueDay.padStart(2, '0')}`,
+        priority: 'medium',
+        recurring_type: assignmentType === 'recurring',
+        notes: notes || '',
+        template: 1
+      };
+
+      console.log('Assigning task with payload:', payload);
+
+      // Call the assignment API
+      const response = await api.post('esg/api/assign-report-task/', {
+        json: payload
+      });
+      
+      console.log('Assignment response:', response);
+
+      if (response) {
+        // Update local state after successful API call
+        const selectedUser = users.find(u => u.org_user_id === employeeId);
+        setTasks(prevTasks =>
+          prevTasks.map(task =>
+            task.id === selectedTaskId
+              ? {
+                  ...task,
+                  assigned_to: parseInt(employeeId),
+                  assignedToName: selectedUser?.name || 'Unknown User',
+                  due_date: assignmentType === 'one-time' ? (dueDate ? dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]) : payload.due_date
+                }
+              : task
+          )
+        );
+      }
+      
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      alert('Error assigning task. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -976,6 +1220,32 @@ const ReportingTaskManagement: React.FC = () => {
       pendingUpdates.current.clear();
     };
   }, [reportId]);
+
+  // Fetch internal users for assignment
+  React.useEffect(() => {
+    const fetchInternalUsers = async () => {
+      try {
+        const response = await api.get('esg/api/get-internal-external-users/?user_type=INTERNAL');
+        const usersData = await response.json();
+        console.log('Fetched internal users:', usersData);
+
+        // Transform the API response to match our expected format
+        const transformedUsers = (usersData as any[]).map((user: any) => ({
+          id: user.id.toString(),
+          org_user_id: user.org_user_id,
+          name: user.full_name || (user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '') || user.username || user.email?.split('@')[0] || 'Unknown User',
+          department: user.department || 'Not specified',
+          email: user.email
+        }));
+
+        setUsers(transformedUsers);
+      } catch (error) {
+        console.error('Error fetching internal users:', error);
+      }
+    };
+
+    fetchInternalUsers();
+  }, []);
 
   // Add priority change handler
   const handleChangePriority = async (taskId: number, newPriority: string) => {
@@ -1258,13 +1528,20 @@ const ReportingTaskManagement: React.FC = () => {
         </Box>
 
         {/* User Assignment Dialog */}
-        <UserAssignmentDialog open={dialogOpen} onClose={handleCloseDialog} onAssign={handleAssignUser} />
+        <UserAssignmentDialog 
+          open={dialogOpen} 
+          onClose={handleCloseDialog} 
+          onAssign={handleAssignUser} 
+          users={users}
+          currentTask={currentTaskForAssignment}
+        />
 
         {/* Task Detail Dialog */}
         <TaskDetailDialog 
           open={taskDetailDialogOpen} 
           onClose={handleCloseTaskDetail} 
           task={tasks.find(task => task.id === selectedTaskId) || null}
+          onAssignUser={handleOpenAssignmentDialog}
         />
 
         {/* Due Date Selection Dialog */}
