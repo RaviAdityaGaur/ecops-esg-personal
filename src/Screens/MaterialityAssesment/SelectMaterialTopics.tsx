@@ -18,6 +18,11 @@ interface MaterialTopic {
   id: string | number;
   name: string;
   hasCheckbox?: boolean;
+  description?: string;
+  is_important?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  organisation?: number;
   [key: string]: any;
 }
 
@@ -30,17 +35,9 @@ const MaterialTopicsForm = ({
 }) => {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [error, setError] = useState("");
-  const [materialTopics, setMaterialTopics] = useState<MaterialTopic[]>([
-    { id: "carbon_emissions", name: "Carbon Emissions", hasCheckbox: true },
-    { id: "employee_wellbeing", name: "Employee Wellbeing", hasCheckbox: true },
-    { id: "public_policy", name: "Public Policy", hasCheckbox: true },
-    { id: "labor", name: "Labor", hasCheckbox: true },
-    { id: "aaaa", name: "AAAA", hasCheckbox: true },
-    { id: "bbbb", name: "BBBB", hasCheckbox: true },
-    { id: "cccc", name: "CCCC", hasCheckbox: true },
-    { id: "dddd", name: "DDDD", hasCheckbox: true },
-  ]);
+  const [materialTopics, setMaterialTopics] = useState<MaterialTopic[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingTopics, setIsLoadingTopics] = useState(false);
   const { reportId } = useParams();
 
   const handleTopicChange = (topicId: string, checked: boolean) => {
@@ -53,20 +50,60 @@ const MaterialTopicsForm = ({
     });
   };
 
+  // Fetch material topics from API
+  useEffect(() => {
+    const fetchMaterialTopics = async () => {
+      try {
+        setIsLoadingTopics(true);
+        const response = await api
+          .get("esg/api/material-issues/")
+          .json<MaterialTopic[]>();
+        
+        // Transform API response to match our interface
+        const transformedTopics = response.map((topic) => ({
+          id: topic.id,
+          name: topic.name,
+          hasCheckbox: true,
+          description: topic.description,
+          is_important: topic.is_important,
+          organisation: topic.organisation
+        }));
+        
+        setMaterialTopics(transformedTopics);
+        console.log("Material topics fetched:", transformedTopics);
+      } catch (error) {
+        console.error("Error fetching material topics:", error);
+        setError("Failed to load material topics. Please refresh the page.");
+      } finally {
+        setIsLoadingTopics(false);
+      }
+    };
+
+    fetchMaterialTopics();
+  }, []);
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
       
+      // Convert selected topic IDs to integers for the API
+      const materialTopicIds = selectedTopics.map(id => parseInt(id, 10));
+      
+      // Call API to add material topics to report
+      await api.post("esg/api/add-material-topic-to-report/", {
+        json: {
+          report_id: parseInt(reportId!, 10),
+          material_topic_ids: materialTopicIds
+        }
+      });
+
+      console.log("Material topics added to report:", {
+        report_id: reportId,
+        material_topic_ids: materialTopicIds
+      });
+      
       // Update form data with selected topics
       updateFormData({ selectedTopics });
-      
-      // You can add API call here to save selected material topics
-      // await api.post("esg/api/material-topics/", {
-      //   json: { 
-      //     report_id: reportId,
-      //     selected_topics: selectedTopics 
-      //   },
-      // });
 
       onNext();
     } catch (error) {
@@ -108,39 +145,64 @@ const MaterialTopicsForm = ({
         mb: 4, 
         flex: 1,
       }}>
-        {materialTopics.map((topic) => (
-          <Box key={topic.id} sx={{ display: "flex", alignItems: "center" }}>
-            {topic.hasCheckbox ? (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={selectedTopics.includes(topic.id.toString())}
-                    onChange={(e) => handleTopicChange(topic.id.toString(), e.target.checked)}
-                    sx={{
-                      color: "primary.main",
-                      "&.Mui-checked": {
-                        color: "primary.main",
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography sx={{ fontSize: "16px", color: "text.primary" }}>
-                    {topic.name}
-                  </Typography>
-                }
-              />
-            ) : (
-              <Typography sx={{ 
-                fontSize: "16px", 
-                color: "text.primary",
-                pl: 5 // Align with checkbox labels
-              }}>
-                {topic.name}
-              </Typography>
-            )}
+        {isLoadingTopics ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <Typography sx={{ color: "text.secondary" }}>
+              Loading material topics...
+            </Typography>
           </Box>
-        ))}
+        ) : materialTopics.length === 0 ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <Typography sx={{ color: "text.secondary" }}>
+              No material topics available.
+            </Typography>
+          </Box>
+        ) : (
+          materialTopics.map((topic) => (
+            <Box key={topic.id} sx={{ display: "flex", alignItems: "center" }}>
+              {topic.hasCheckbox ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedTopics.includes(topic.id.toString())}
+                      onChange={(e) => handleTopicChange(topic.id.toString(), e.target.checked)}
+                      sx={{
+                        color: "primary.main",
+                        "&.Mui-checked": {
+                          color: "primary.main",
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography sx={{ fontSize: "16px", color: "text.primary" }}>
+                        {topic.name}
+                      </Typography>
+                      {topic.description && (
+                        <Typography sx={{ 
+                          fontSize: "14px", 
+                          color: "text.secondary",
+                          mt: 0.5 
+                        }}>
+                          {topic.description}
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                />
+              ) : (
+                <Typography sx={{ 
+                  fontSize: "16px", 
+                  color: "text.primary",
+                  pl: 5 // Align with checkbox labels
+                }}>
+                  {topic.name}
+                </Typography>
+              )}
+            </Box>
+          ))
+        )}
       </Box>
 
       {/* Bottom Buttons */}
@@ -173,7 +235,7 @@ const MaterialTopicsForm = ({
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={!isAnyTopicSelected || isLoading}
+          disabled={!isAnyTopicSelected || isLoading || isLoadingTopics}
           sx={{
             textTransform: "capitalize",
             px: 4,

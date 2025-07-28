@@ -399,7 +399,7 @@ export default function ReportingEmail() {
           <Button
             variant="contained"
             size="small"
-            onClick={() => navigate(`/steering-committee-approval-request/${reportId}`)}
+            onClick={() => navigate(`/task-assignment/${reportId}`)}
             sx={{
               bgcolor: 'rgb(54, 115, 97)',
               '&:hover': {

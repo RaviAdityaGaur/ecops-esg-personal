@@ -97,9 +97,47 @@ const SurveyNameForm = ({
     try {
       setIsLoading(true);
       // Make POST request to add disclosures API
-      await api.post("esg/api/add-standard-disclosures-to-report/", {
-        json: { report_id: reportId },
-      });
+      try {
+        // First get current report meta data
+        const reportMeta = await api
+          .get(`esg/api/report-meta/${reportId}`)
+          .json<any>();
+
+        console.log("try>>>>>>>>>>>>>>>>>>>>>", reportMeta);
+        // Update the report meta with the selected survey
+        if (reportMeta) {
+          const currentMeta = reportMeta;
+          await api.put(`esg/api/report-meta/${reportId}/`, {
+            json: {
+              ...currentMeta,
+              linked_survey: "", // This is the survey ID from the dropdown
+            },
+          });
+
+          await api.post("esg/api/add-standard-disclosures-to-report/", {
+            json: { report_id: reportId },
+          });
+          console.log("Report meta updated with linked survey:", surveyName);
+        } else {
+          // If no existing meta, create new one
+          await api.post("esg/api/report-meta/", {
+            json: {
+              reporting: reportId,
+              standard: 0,
+              sector: 0,
+              industry: 0,
+              linked_survey: "",
+            },
+          });
+          console.log(
+            "New report meta created with linked survey:",
+            surveyName
+          );
+        }
+      } catch (metaError) {
+        console.error("Error updating report meta:", metaError);
+        // We continue even if this fails, as it's not critical for navigation
+      }
 
       navigate(`/select-material-topics/${reportId}`);
     } catch (error) {
@@ -161,11 +199,11 @@ const SurveyNameForm = ({
           ))}
       </Select>
 
-      {!isSurveySelected && (
+      
         <Button
           variant="text"
           onClick={handleContinueWithoutSurvey}
-          disabled={isLoading || isSurveySelected}
+          disabled={isLoading }
           sx={{
             mb: 3,
             alignSelf: "flex-end",
@@ -175,7 +213,7 @@ const SurveyNameForm = ({
         >
           Continue without Survey
         </Button>
-      )}
+      
 
       <Button
         variant="contained"
