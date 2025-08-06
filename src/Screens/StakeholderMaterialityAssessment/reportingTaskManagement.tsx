@@ -7,7 +7,7 @@ import { DragDropContext, Draggable, Droppable, type DropResult, type DraggableP
 import SidebarHeader from '../../Components/SidebarHeader';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../common';
 
 // React 18 StrictMode fix for react-beautiful-dnd
@@ -562,9 +562,10 @@ interface TaskDetailDialogProps {
   onClose: () => void;
   task: Task | null;
   onAssignUser?: (taskId: number) => void; // Add this prop
+  onAddUpdateData?: (taskId: number, templateId?: string) => void; // Add this prop
 }
 
-const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task, onAssignUser }) => {
+const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task, onAssignUser, onAddUpdateData }) => {
   if (!task) return null;
 
   return (
@@ -613,6 +614,12 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
             </Typography>
             <Button
               variant="outlined"
+              onClick={() => {
+                if (task && onAddUpdateData) {
+                  onAddUpdateData(task.id, task.template?.toString()); // Pass template ID
+                  onClose(); // Close the task detail dialog
+                }
+              }}
               sx={{
                 borderRadius: '8px',
                 px: 3,
@@ -707,6 +714,7 @@ interface Task {
   assigned_by?: number;
   assignedToName?: string; // For display purposes
   description?: string; // For display purposes
+  template?: number; // Template ID for navigation to data entry form
 }
 
 // Updated task data with column property
@@ -918,7 +926,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
                           </Box>
                         </Box>
                         <Typography variant="subtitle1" fontWeight="medium">
-                          {task.requested_data || `Task ${task.task}`}
+                          {task.disclosure.disclosure_id || `Task ${task.task}`}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                           {task.description || (task.id === 1 ? 'description will go here' : 'default des')}
@@ -956,6 +964,7 @@ const TaskContext = React.createContext<{
 // Main TaskManagement Component
 const ReportingTaskManagement: React.FC = () => {
   const { reportId } = useParams();
+  const navigate = useNavigate();
   console.log('reportid', reportId);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [expanded, setExpanded] = useState<boolean>(false);
@@ -1099,6 +1108,13 @@ const ReportingTaskManagement: React.FC = () => {
     }
   };
 
+  const handleAddUpdateData = (taskId: number, templateId?: string) => {
+    // Navigate to the data entry form page with task ID and template ID
+    navigate(`/data-entry/${taskId}`, {
+      state: { templateId }
+    });
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setDueDateDialogOpen(false);
@@ -1202,8 +1218,9 @@ const ReportingTaskManagement: React.FC = () => {
       }
 
       // setLoading(true);
+      //report-task-list-by-report/36/tasks
       try {
-        const response: any = await api.get(`esg/task/report/${reportId}/tasks/`).json();
+        const response: any = await api.get(`esg/api/report-task-list-by-report/${reportId}/tasks`).json();
         console.log('response', response);
         setTasks(response);
       } catch (err) {
@@ -1542,6 +1559,7 @@ const ReportingTaskManagement: React.FC = () => {
           onClose={handleCloseTaskDetail} 
           task={tasks.find(task => task.id === selectedTaskId) || null}
           onAssignUser={handleOpenAssignmentDialog}
+          onAddUpdateData={handleAddUpdateData}
         />
 
         {/* Due Date Selection Dialog */}

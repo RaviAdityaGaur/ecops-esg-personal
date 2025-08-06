@@ -91,3 +91,47 @@ padding: 0 !important;
 ::-webkit-scrollbar-thumb:hover {
   background-color: #a8a8a8;
 }
+
+/* --- Custom Font Styles for React-Quill Dropdown --- */
+
+/* Set the font-family for the dropdown item */
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before {
+  font-family: "Arial", sans-serif;
+  content: "Arial";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="comic-sans-ms"]::before {
+  font-family: "Comic Sans MS", cursive;
+  content: "Comic Sans MS";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="courier-new"]::before {
+  font-family: "Courier New", monospace;
+  content: "Courier New";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="georgia"]::before {
+  font-family: "Georgia", serif;
+  content: "Georgia";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="helvetica"]::before {
+  font-family: "Helvetica", sans-serif;
+  content: "Helvetica";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="lucida-sans-unicode"]::before {
+  font-family: "Lucida Sans Unicode", sans-serif;
+  content: "Lucida Sans Unicode";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tahoma"]::before {
+  font-family: "Tahoma", sans-serif;
+  content: "Tahoma";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before {
+  font-family: "Times New Roman", serif;
+  content: "Times New Roman";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="trebuchet-ms"]::before {
+  font-family: "Trebuchet MS", sans-serif;
+  content: "Trebuchet MS";
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="verdana"]::before {
+  font-family: "Verdana", sans-serif;
+  content: "Verdana";
+}

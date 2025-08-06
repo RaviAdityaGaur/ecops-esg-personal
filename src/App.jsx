@@ -47,6 +47,9 @@ import SelectMaterialTopics from "./Screens/MaterialityAssesment/SelectMaterialT
 
 import ReportingSectorIndustryForm from "./Screens/StakeholderMaterialityAssessment/ReportingSectorIndustryForm.tsx";
 import ReportingTaskManagement from "./Screens/StakeholderMaterialityAssessment/reportingTaskManagement.tsx";
+import DataEntryForm from "./Screens/StakeholderMaterialityAssessment/DataEntryForm.tsx";
+import RequestDataForm from "./Screens/StakeholderMaterialityAssessment/RequestDataForm.tsx";
+import CustomizeTemplateForm from "./Screens/StakeholderMaterialityAssessment/CustomizeTemplateForm.tsx";
 
 import ReportEmail from "./Screens/StakeholderMaterialityAssessment/ReportingEmail.tsx";
 import ReportingScApprovalRequest from "./Screens/StakeholderMaterialityAssessment/ReportingScApprovalRequest.tsx";
@@ -483,6 +486,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <ReportingTaskManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/data-entry/:taskId"
+            element={
+              <ProtectedRoute>
+                <DataEntryForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/request-data-form"
+            element={
+              <ProtectedRoute>
+                <RequestDataForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customize-template-form"
+            element={
+              <ProtectedRoute>
+                <CustomizeTemplateForm />
               </ProtectedRoute>
             }
           />
