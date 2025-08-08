@@ -122,6 +122,7 @@ const DataEntryForm: React.FC = () => {
     const [disclosureContent, setDisclosureContent] = useState('');
     const [templateInstanceData, setTemplateInstanceData] = useState<any>(null);
     const [currentTask, setCurrentTask] = useState<any>(null);
+    const [sites, setSites] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchTaskAndTemplateData = async () => {
@@ -182,6 +183,25 @@ const DataEntryForm: React.FC = () => {
 
         fetchTaskAndTemplateData();
     }, [reportId, taskId]);
+
+    // Fetch sites data
+    useEffect(() => {
+        const fetchSites = async () => {
+            try {
+              
+                const sitesResponse: any = await api.get('organisation/site/').json();
+            
+                
+                if (sitesResponse.results) {
+                    setSites(sitesResponse.results);
+                }
+            } catch (error) {
+                console.error("Error fetching sites data:", error);
+            }
+        };
+
+        fetchSites();
+    }, []);
 
     // Helper function to convert template data to reporting requirements format
     const convertTemplateDataToRequirements = (rows: any) => {
@@ -349,8 +369,11 @@ const DataEntryForm: React.FC = () => {
                     <FormControl sx={{ minWidth: 300, bgcolor: 'white' }}>
                         <Select value={selectedSite} onChange={(e) => setSelectedSite(e.target.value)} displayEmpty sx={{ '& .MuiSelect-select': { padding: '12px 16px', fontSize: '14px' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e0e0e0' } }}>
                             <MenuItem value="" disabled><Typography color="text.secondary">Select</Typography></MenuItem>
-                            <MenuItem value="site1">Site 1 - Main Office</MenuItem>
-                            <MenuItem value="site2">Site 2 - Manufacturing Plant</MenuItem>
+                            {sites.map((site) => (
+                                <MenuItem key={site.id} value={site.id}>
+                                    {site.legal_name}
+                                </MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
                 </Box>
