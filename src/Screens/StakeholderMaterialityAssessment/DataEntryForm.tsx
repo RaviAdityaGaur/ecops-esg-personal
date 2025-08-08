@@ -21,10 +21,12 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SidebarHeader from '../../Components/SidebarHeader';
+import { api } from '../common'; // Assuming your api object is here
 
 // Import React-Quill and its CSS
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+
 
 // --- Define Custom Font List ---
 const fontWhitelist = [
@@ -63,30 +65,26 @@ interface ReportingRequirement {
     description: string;
     unit: string;
     months: { [key: string]: string };
+    rowType: 'main' | 'sub'; // Indicates if this is a main heading or sub-heading
+    mainIndex?: number; // For main headings (1, 2, 3...)
+    subIndex?: string; // For sub-headings (a, b, c...)
 }
 
-// Mock data
-const mockTemplateData: TemplateData = {
-    standard: 'GRI 12',
-    topicStandard: 'Child labor',
-    disclosureSubTopic: 'Operations &...',
-    disclosureId: 'GRI 408-1',
-    sdgGoal: 'Dummy',
-    sdgTarget: 'Dummy'
-};
-
+// Mock data for parts of the page that are not yet dynamic
 const mockReportingRequirements: ReportingRequirement[] = [
     {
         id: 1,
         description: 'Total water withdrawal from all areas, and a breakdown of this total by the following sources, if applicable:',
         unit: 'UNIT',
-        months: { 'APR-20': '1', 'MAY-20': '1', 'JUN-20': '1', 'JUL-20': '1', 'AUG-20': '1', 'SEP-20': '1', 'OCT-20': '1', 'NOV-20': '1', 'DEC-20': '1' }
+        months: { 'APR-20': '1', 'MAY-20': '1', 'JUN-20': '1', 'JUL-20': '1', 'AUG-20': '1', 'SEP-20': '1', 'OCT-20': '1', 'NOV-20': '1', 'DEC-20': '1' },
+        rowType: 'main',
+        mainIndex: 1
     },
-    { id: 2, description: 'Surface water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' } },
-    { id: 3, description: 'Ground water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' } },
-    { id: 4, description: 'Sea water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' } },
-    { id: 5, description: 'Produced water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' } },
-    { id: 6, description: 'Third-party water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' } },
+    { id: 2, description: 'Surface water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' }, rowType: 'sub', subIndex: 'a' },
+    { id: 3, description: 'Ground water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' }, rowType: 'sub', subIndex: 'a' },
+    { id: 4, description: 'Sea water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' }, rowType: 'sub', subIndex: 'a' },
+    { id: 5, description: 'Produced water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' }, rowType: 'sub', subIndex: 'a' },
+    { id: 6, description: 'Third-party water', unit: '', months: { 'APR-20': '', 'MAY-20': '', 'JUN-20': '', 'JUL-20': '', 'AUG-20': '', 'SEP-20': '', 'OCT-20': '', 'NOV-20': '', 'DEC-20': '' }, rowType: 'sub', subIndex: 'a' },
 ];
 
 
@@ -105,8 +103,16 @@ const DataEntryForm: React.FC = () => {
     const location = useLocation();
     const { taskId } = useParams();
     const templateId = location.state?.templateId;
+    const reportId = location.state?.reportId; // Get reportId from navigation state
 
-    const [templateData, setTemplateData] = useState<TemplateData>(mockTemplateData);
+    const [templateData, setTemplateData] = useState<TemplateData>({
+        standard: '',
+        topicStandard: '',
+        disclosureSubTopic: '',
+        disclosureId: '',
+        sdgGoal: '',
+        sdgTarget: ''
+    });
     const [reportingRequirements, setReportingRequirements] = useState<ReportingRequirement[]>(mockReportingRequirements);
     const [activeTab, setActiveTab] = useState<'requirements' | 'recommendations' | 'guidance'>('requirements');
     const [summary, setSummary] = useState('');
@@ -114,10 +120,137 @@ const DataEntryForm: React.FC = () => {
     const [attachedDocuments, setAttachedDocuments] = useState<File[]>([]);
     const [selectedSite, setSelectedSite] = useState('');
     const [disclosureContent, setDisclosureContent] = useState('');
+    const [templateInstanceData, setTemplateInstanceData] = useState<any>(null);
+    const [currentTask, setCurrentTask] = useState<any>(null);
 
     useEffect(() => {
-        console.log('DataEntryForm loaded with:', { taskId, templateId });
-    }, [taskId, templateId]);
+        const fetchTaskAndTemplateData = async () => {
+            if (reportId && taskId) {
+                try {
+                    // Convert reportId to number
+                    const reportIdNumber = Number(reportId);
+                    console.log('Debug: reportId (string):', reportId, 'converted to number:', reportIdNumber);
+                    
+                    // First, fetch the task list to get the current task details
+                    const taskResponse: any = await api.get(`esg/api/report-task-list-by-report/${reportIdNumber}/tasks`).json();
+                    console.log('Debug: Task list response:', taskResponse);
+                    
+                    // Find the current task by taskId
+                    const currentTaskData = taskResponse.find((task: any) => task.task_assignment.id === Number(taskId));
+                    console.log('Debug: Current task found:', currentTaskData);
+                    
+                    if (currentTaskData) {
+                        setCurrentTask(currentTaskData);
+                        
+                        // Update template data with disclosure information
+                        const disclosure = currentTaskData.disclosure;
+                        if (disclosure) {
+                            setTemplateData({
+                                standard: disclosure.indicator_source || 'N/A',
+                                topicStandard: disclosure.disclosure_theme || 'N/A',
+                                disclosureSubTopic: disclosure.sub_topic || 'N/A',
+                                disclosureId: disclosure.disclosure_id || 'N/A',
+                                sdgGoal: disclosure.sdg_targets?.[0]?.goal?.toString() || 'N/A',
+                                sdgTarget: disclosure.sdg_targets?.[0]?.target || 'N/A',
+                            });
+                        }
+                        
+                        // Get template instance data
+                        const templateInstanceId = currentTaskData.template_instance?.id;
+                        if (templateInstanceId) {
+                            console.log('Debug: Fetching template instance data for ID:', templateInstanceId);
+                            const templateResponse: any = await api.get(`esgtemplate/template-instance/${templateInstanceId}/data`).json();
+                            console.log('Debug: Template instance data:', templateResponse);
+                            setTemplateInstanceData(templateResponse);
+                            
+                            // Convert template data to reporting requirements format
+                            if (templateResponse.rows) {
+                                const requirements = convertTemplateDataToRequirements(templateResponse.rows);
+                                setReportingRequirements(requirements);
+                            }
+                        }
+                    } else {
+                        console.log('Debug: No task found matching taskId:', taskId);
+                    }
+                } catch (error) {
+                    console.error("Error fetching task and template data:", error);
+                }
+            } else {
+                console.log('Debug: Missing reportId or taskId - reportId:', reportId, 'taskId:', taskId);
+            }
+        };
+
+        fetchTaskAndTemplateData();
+    }, [reportId, taskId]);
+
+    // Helper function to convert template data to reporting requirements format
+    const convertTemplateDataToRequirements = (rows: any) => {
+        const requirements: ReportingRequirement[] = [];
+        let idCounter = 1;
+        let mainIndexCounter = 1;
+        
+        // Create month columns (you can adjust this based on your needs)
+        const monthColumns = ['APR-20', 'MAY-20', 'JUN-20', 'JUL-20', 'AUG-20', 'SEP-20', 'OCT-20', 'NOV-20', 'DEC-20'];
+        const emptyMonths = monthColumns.reduce((acc, month) => ({ ...acc, [month]: '' }), {});
+        
+        // Group rows by composition to create a hierarchical structure
+        const groupedRows: { [key: string]: any[] } = {};
+        
+        Object.keys(rows).forEach((rowKey) => {
+            const row = rows[rowKey];
+            const composition = row.composition || 'Unnamed';
+            
+            if (!groupedRows[composition]) {
+                groupedRows[composition] = [];
+            }
+            groupedRows[composition].push(row);
+        });
+        
+        // Convert grouped rows to requirements with proper numbering
+        Object.keys(groupedRows).forEach((composition) => {
+            const rowGroup = groupedRows[composition];
+            
+            // Add main composition as a numbered requirement (1, 2, 3...)
+            requirements.push({
+                id: idCounter++,
+                description: composition,
+                unit: 'UNIT',
+                months: { ...emptyMonths },
+                rowType: 'main',
+                mainIndex: mainIndexCounter
+            });
+            
+            // Add sub-compositions as alphabetic sub-requirements (all marked as 'a')
+            rowGroup.forEach((row) => {
+                if (row.sub_composition && row.sub_composition !== composition) {
+                    requirements.push({
+                        id: idCounter++,
+                        description: row.sub_composition,
+                        unit: row.row_type === 'monthly' ? 'UNIT' : 'TEXT',
+                        months: { ...emptyMonths },
+                        rowType: 'sub',
+                        subIndex: 'a' // All sub-items use 'a' as per the design
+                    });
+                }
+            });
+            
+            mainIndexCounter++;
+        });
+        
+        // If no rows found, return default structure
+        if (requirements.length === 0) {
+            requirements.push({
+                id: 1,
+                description: "Total water withdrawal from all areas, and a breakdown of this total by the following sources, if applicable:",
+                unit: 'UNIT',
+                months: { ...emptyMonths },
+                rowType: 'main',
+                mainIndex: 1
+            });
+        }
+        
+        return requirements;
+    };
 
     const handleBack = () => navigate(-1);
     const handleSaveAsDraft = () => console.log('Saving as draft...');
@@ -160,7 +293,7 @@ const DataEntryForm: React.FC = () => {
                         <ArrowBackIcon />
                     </IconButton>
                     <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                        Water Withdrawal
+                        {currentTask?.disclosure?.disclosure_theme || 'Water Withdrawal'}
                     </Typography>
                 </Paper>
 
@@ -227,7 +360,9 @@ const DataEntryForm: React.FC = () => {
                     {/* Disclosure & Requirements Section */}
                     <Grid item xs={12}>
                         <Paper sx={{ p: 3, borderRadius: 2 }}>
-                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>Disclosure 3-3( Management of Material Topics)</Typography>
+                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                Disclosure {currentTask?.disclosure?.disclosure_id || '3-3'} ({currentTask?.disclosure?.disclosure_theme || 'Management of Material Topics'})
+                            </Typography>
                             <Box sx={{ mb: 3,  '.ql-editor': { minHeight: '100px' } }}>
                                 <ReactQuill
                                     theme="snow"
@@ -248,17 +383,60 @@ const DataEntryForm: React.FC = () => {
                             {activeTab === 'requirements' && (
                                 <Box>
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>This section will display the GRI requirements in a read only format...</Typography>
-                                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Dummy Text</Typography>
+                                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                                        {currentTask?.disclosure?.disclosure_description || 'Template Data'}
+                                    </Typography>
                                     <Chip label="FY 2020-21" sx={{ bgcolor: '#E8F5E8', color: '#2E7D32', mb: 2, fontWeight: 600 }} />
+                                    
+                                    {/* Debug information */}
+                                    {templateInstanceData && (
+                                        <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Debug: Template ID: {templateInstanceData.template_id}, 
+                                                Rows: {Object.keys(templateInstanceData.rows || {}).length}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    
                                     <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
                                         <Table size="small">
-                                            <TableHead><TableRow sx={{ bgcolor: '#f5f5f5' }}><TableCell sx={{ fontWeight: 600, minWidth: 300 }}>REPORTING REQUIREMENTS</TableCell><TableCell sx={{ fontWeight: 600, width: 80 }}>UNIT</TableCell>{monthColumns.map((month) => (<TableCell key={month} sx={{ fontWeight: 600, width: 80 }}>{month}</TableCell>))}</TableRow></TableHead>
+                                            <TableHead>
+                                                <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                                    <TableCell sx={{ fontWeight: 600, minWidth: 300 }}>REPORTING REQUIREMENTS</TableCell>
+                                                    <TableCell sx={{ fontWeight: 600, width: 80 }}>UNIT</TableCell>
+                                                    {monthColumns.map((month) => (
+                                                        <TableCell key={month} sx={{ fontWeight: 600, width: 80 }}>{month}</TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            </TableHead>
                                             <TableBody>
                                                 {reportingRequirements.map((req) => (
                                                     <TableRow key={req.id}>
-                                                        <TableCell sx={{ fontSize: '14px' }}>{req.id}. {req.description}</TableCell>
+                                                        <TableCell sx={{ fontSize: '14px', pl: req.rowType === 'sub' ? 4 : 2 }}>
+                                                            {req.rowType === 'main' ? (
+                                                                <>{req.mainIndex}. {req.description}</>
+                                                            ) : (
+                                                                <>{req.subIndex}. {req.description}</>
+                                                            )}
+                                                        </TableCell>
                                                         <TableCell>{req.unit}</TableCell>
-                                                        {monthColumns.map((month) => (<TableCell key={month}><TextField size="small" value={req.months[month]} onChange={(e) => handleCellValueChange(req.id, month, e.target.value)} variant="outlined" sx={{ width: '60px', '& .MuiOutlinedInput-input': { padding: '4px 8px', fontSize: '12px' } }} /></TableCell>))}
+                                                        {monthColumns.map((month) => (
+                                                            <TableCell key={month}>
+                                                                <TextField 
+                                                                    size="small" 
+                                                                    value={req.months[month]} 
+                                                                    onChange={(e) => handleCellValueChange(req.id, month, e.target.value)} 
+                                                                    variant="outlined" 
+                                                                    sx={{ 
+                                                                        width: '60px', 
+                                                                        '& .MuiOutlinedInput-input': { 
+                                                                            padding: '4px 8px', 
+                                                                            fontSize: '12px' 
+                                                                        } 
+                                                                    }} 
+                                                                />
+                                                            </TableCell>
+                                                        ))}
                                                     </TableRow>
                                                 ))}
                                             </TableBody>

@@ -59,10 +59,10 @@ const UserAssignmentDialog: React.FC<UserAssignmentDialogProps> = ({
   // Reset form when dialog opens
   React.useEffect(() => {
     if (open) {
-      if (currentTask && currentTask.assigned_to) {
+      if (currentTask && currentTask.task_assignment.assigned_to) {
         // Pre-fill form with existing assignment data for editing
-        setSelectedEmployeeId(currentTask.assigned_to.toString());
-        setDueDate(currentTask.due_date ? new Date(currentTask.due_date) : null);
+        setSelectedEmployeeId(currentTask.task_assignment.assigned_to.toString());
+        setDueDate(currentTask.task_assignment.due_date ? new Date(currentTask.task_assignment.due_date) : null);
         setAssignmentType('one-time'); // Default for editing
         setMonthlyDueDay('');
         setNotes('');
@@ -562,7 +562,7 @@ interface TaskDetailDialogProps {
   onClose: () => void;
   task: Task | null;
   onAssignUser?: (taskId: number) => void; // Add this prop
-  onAddUpdateData?: (taskId: number, templateId?: string) => void; // Add this prop
+  onAddUpdateData?: (taskId: number, templateId?: number) => void; // Add this prop
 }
 
 const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task, onAssignUser, onAddUpdateData }) => {
@@ -589,21 +589,21 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
         {/* Header with title and due date */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '18px', flex: 1, mr: 2 }}>
-            {task.title || task.requested_data || `Task ${task.task}`}
+            {task.title || task.disclosure.disclosure_id || `Task ${task.task}`}
           </Typography>
           <Box sx={{ textAlign: 'right' }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '12px' }}>
               Due Date :
             </Typography>
             <Typography variant="body2" sx={{ color: '#d93025', fontWeight: 500 }}>
-              {formatDate(task.due_date)}
+              {formatDate(task.task_assignment.due_date)}
             </Typography>
           </Box>
         </Box>
 
         {/* Description */}
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.6 }}>
-          {task.requested_data || task.description || 'This is a description of the Disclosure.'}
+          {task.disclosure.disclosure_description || task.description || 'This is a description of the Disclosure.'}
         </Typography>
 
         {/* Action Buttons */}
@@ -616,7 +616,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
               variant="outlined"
               onClick={() => {
                 if (task && onAddUpdateData) {
-                  onAddUpdateData(task.id, task.template?.toString()); // Pass template ID
+                  onAddUpdateData(task.task_assignment.id, task.template_instance.id); // Pass template ID
                   onClose(); // Close the task detail dialog
                 }
               }}
@@ -646,7 +646,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
               variant="outlined"
               onClick={() => {
                 if (task && onAssignUser) {
-                  onAssignUser(task.id);
+                  onAssignUser(task.task_assignment.id);
                   onClose(); // Close the task detail dialog
                 }
               }}
@@ -664,7 +664,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
                 }
               }}
             >
-              {task?.assigned_to ? 'Edit Assignment' : 'Assign to User'}
+              {task?.task_assignment.assigned_to ? 'Edit Assignment' : 'Assign to User'}
             </Button>
           </Box>
         </Box>
@@ -699,22 +699,49 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
 // Task Interface - Updated to match API response
 interface Task {
   id: number;
-  title?: string;
-  created_at?: string;
-  updated_at?: string;
-  requested_data: string;
-  priority: string;
-  due_date: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  is_recurring?: boolean;
-  recurrence_type?: string;
-  recurrence_day?: number;
   task: number;
-  assigned_to: number;
-  assigned_by?: number;
-  assignedToName?: string; // For display purposes
-  description?: string; // For display purposes
-  template?: number; // Template ID for navigation to data entry form
+  report_disclosure: number;
+  task_assignment: {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    requested_data: string;
+    priority: string;
+    due_date: string;
+    status: 'pending' | 'in_progress' | 'completed';
+    is_recurring: boolean;
+    recurrence_type: string | null;
+    recurrence_day: number | null;
+    task_type: string;
+    task: number;
+    assigned_to: number;
+    assigned_by: number;
+    parent_task: number | null;
+  };
+  disclosure: {
+    disclosure_id: string;
+    disclosure_description: string;
+    dimension: string;
+    year: number;
+    sdg_targets: Array<{
+      id: number;
+      target: string;
+      goal: number;
+    }>;
+    indicator_source: string;
+    disclosure_theme: string;
+    sub_topic: string;
+  };
+  template_instance: {
+    id: number;
+    template: number;
+    organisation: number;
+    reporting: number;
+  };
+  // Legacy properties for backward compatibility
+  title?: string;
+  assignedToName?: string;
+  description?: string;
 }
 
 // Updated task data with column property
@@ -840,7 +867,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
     setEditTaskId(null);
   };
 
-  const currentTaskToEdit = tasks.find(task => task.id === editTaskId) || null;
+  const currentTaskToEdit = tasks.find(task => task.task_assignment.id === editTaskId) || null;
 
   return (
     <>
@@ -851,7 +878,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
           </ListItem>
         ) : (
           tasks.map((task, index) => (
-            <Draggable key={task.id} draggableId={`task-${task.id}`} index={index}>
+            <Draggable key={task.task_assignment.id} draggableId={`task-${task.task_assignment.id}`} index={index}>
               {(provided: DraggableProvided) => (
                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                   <ListItem
@@ -872,19 +899,19 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
                       <Box sx={{ p: 1.5 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                           <Chip
-                            label={task.priority}
+                            label={task.task_assignment.priority}
                             size="small"
-                            onClick={e => handlePriorityClick(e, task.id, task.priority)}
+                            onClick={e => handlePriorityClick(e, task.task_assignment.id, task.task_assignment.priority)}
                             sx={{
                               height: '24px',
                               cursor: 'pointer',
-                              bgcolor: task.priority === 'high' ? '#fce8e8' : task.priority === 'medium' ? '#fff8e1' : '#e6f4ea',
-                              color: task.priority === 'high' ? '#d93025' : task.priority === 'medium' ? '#b06000' : '#137333'
+                              bgcolor: task.task_assignment.priority === 'high' ? '#fce8e8' : task.task_assignment.priority === 'medium' ? '#fff8e1' : '#e6f4ea',
+                              color: task.task_assignment.priority === 'high' ? '#d93025' : task.task_assignment.priority === 'medium' ? '#b06000' : '#137333'
                             }}
                           />
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Chip
-                              label={task.assignedToName ? formatDate(task.due_date) : formatDate(task.due_date)}
+                              label={task.assignedToName ? formatDate(task.task_assignment.due_date) : formatDate(task.task_assignment.due_date)}
                               size="small"
                               sx={{
                                 height: '24px',
@@ -892,7 +919,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
                                 color: '#d93025',
                                 mr: 1,
                                 borderRadius: '4px',
-                                visibility: task.due_date ? 'visible' : 'hidden'
+                                visibility: task.task_assignment.due_date ? 'visible' : 'hidden'
                               }}
                             />
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -901,7 +928,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
                                 component="span"
                                 onClick={e => {
                                   e.stopPropagation();
-                                  onOpenTaskDetail(task.id);
+                                  onOpenTaskDetail(task.task_assignment.id);
                                 }}
                                 sx={{
                                   width: 24,
@@ -926,10 +953,10 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onOpenTaskDetail }) => {
                           </Box>
                         </Box>
                         <Typography variant="subtitle1" fontWeight="medium">
-                          {task.disclosure.disclosure_id || `Task ${task.task}`}
+                          {task.title || task.disclosure.disclosure_theme || `Task ${task.task}`}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          {task.description || (task.id === 1 ? 'description will go here' : 'default des')}
+                          {task.disclosure.disclosure_description || task.disclosure.sub_topic || (task.task_assignment.id === 1 ? 'description will go here' : 'default des')}
                         </Typography>
                       </Box>
                     </Paper>
@@ -982,7 +1009,7 @@ const ReportingTaskManagement: React.FC = () => {
   const pendingUpdates = React.useRef<Map<number, NodeJS.Timeout>>(new Map());
 
   const getColumnTasks = (column: ColumnId) => {
-    return tasks.filter(task => task.status === column);
+    return tasks.filter(task => task.task_assignment.status === column);
   };
 
   // const handleDragEnd = (result: DropResult) => {
@@ -1008,7 +1035,7 @@ const ReportingTaskManagement: React.FC = () => {
   //   // Update the task's column
   //   setTasks(prevTasks =>
   //     prevTasks.map(task =>
-  //       task.id === taskId
+  //       task.task_assignment.id === taskId
   //         ? {
   //             ...task,
   //             column: targetColumn,
@@ -1038,18 +1065,21 @@ const ReportingTaskManagement: React.FC = () => {
     const targetColumn = destination.droppableId as ColumnId;
 
     // Get the current task to preserve its priority
-    const currentTask = tasks.find(task => task.id === taskId);
+    const currentTask = tasks.find(task => task.task_assignment.id === taskId);
     if (!currentTask) return;
 
-    const previousStatus = currentTask.status;
+    const previousStatus = currentTask.task_assignment.status;
 
     // Optimistic update: Update UI immediately
     setTasks(prevTasks =>
       prevTasks.map(task =>
-        task.id === taskId
+        task.task_assignment.id === taskId
           ? {
               ...task,
-              status: targetColumn
+              task_assignment: {
+                ...task.task_assignment,
+                status: targetColumn
+              }
             }
           : task
       )
@@ -1063,7 +1093,7 @@ const ReportingTaskManagement: React.FC = () => {
         json: {
           id: taskId,
           status: targetColumn,
-          priority: currentTask.priority
+          priority: currentTask.task_assignment.priority
         }
       });
 
@@ -1074,10 +1104,13 @@ const ReportingTaskManagement: React.FC = () => {
       // Revert the optimistic update on error
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === taskId
+          task.task_assignment.id === taskId
             ? {
                 ...task,
-                status: previousStatus // Revert to previous status
+                task_assignment: {
+                  ...task.task_assignment,
+                  status: previousStatus // Revert to previous status
+                }
               }
             : task
         )
@@ -1108,10 +1141,10 @@ const ReportingTaskManagement: React.FC = () => {
     }
   };
 
-  const handleAddUpdateData = (taskId: number, templateId?: string) => {
-    // Navigate to the data entry form page with task ID and template ID
+  const handleAddUpdateData = (taskId: number, templateId?: number) => {
+    // Navigate to the data entry form page with task ID, template ID, and report ID
     navigate(`/data-entry/${taskId}`, {
-      state: { templateId }
+      state: { templateId, reportId }
     });
   };
 
@@ -1142,7 +1175,7 @@ const ReportingTaskManagement: React.FC = () => {
         priority: 'medium',
         recurring_type: assignmentType === 'recurring',
         notes: notes || '',
-        template: 1
+        template: currentTaskForAssignment?.template_instance.template || 1
       };
 
       console.log('Assigning task with payload:', payload);
@@ -1159,7 +1192,7 @@ const ReportingTaskManagement: React.FC = () => {
         const selectedUser = users.find(u => u.org_user_id === employeeId);
         setTasks(prevTasks =>
           prevTasks.map(task =>
-            task.id === selectedTaskId
+            task.task_assignment.id === selectedTaskId
               ? {
                   ...task,
                   assigned_to: parseInt(employeeId),
@@ -1196,7 +1229,7 @@ const ReportingTaskManagement: React.FC = () => {
     if (selectedEmployee && selectedDueDate && selectedTaskId) {
       setTasks(prevTasks =>
         prevTasks.map(task =>
-          task.id === selectedTaskId
+          task.task_assignment.id === selectedTaskId
             ? {
                 ...task,
                 assignedToName: selectedEmployee.name,
@@ -1218,7 +1251,8 @@ const ReportingTaskManagement: React.FC = () => {
       }
 
       // setLoading(true);
-      //report-task-list-by-report/36/tasks
+      // esg/api/report-task-list-by-report/${reportId}/tasks
+      // esg/task/report/${reportId}/tasks
       try {
         const response: any = await api.get(`esg/api/report-task-list-by-report/${reportId}/tasks`).json();
         console.log('response', response);
@@ -1267,15 +1301,23 @@ const ReportingTaskManagement: React.FC = () => {
   // Add priority change handler
   const handleChangePriority = async (taskId: number, newPriority: string) => {
     // Get the current task to preserve its status
-    const currentTask = tasks.find(task => task.id === taskId);
+    const currentTask = tasks.find(task => task.task_assignment.id === taskId);
     if (!currentTask) return;
 
-    const previousPriority = currentTask.priority;
+    const previousPriority = currentTask.task_assignment.priority;
 
     // Optimistic update: Update UI immediately
     setTasks(prevTasks => 
       prevTasks.map(task => 
-        task.id === taskId ? { ...task, priority: newPriority } : task
+        task.task_assignment.id === taskId 
+          ? { 
+              ...task, 
+              task_assignment: {
+                ...task.task_assignment,
+                priority: newPriority
+              }
+            } 
+          : task
       )
     );
 
@@ -1286,7 +1328,7 @@ const ReportingTaskManagement: React.FC = () => {
       await api.post('esg/task/update-task-status/', {
         json: {
           id: taskId,
-          status: currentTask.status, // Keep current status
+          status: currentTask.task_assignment.status, // Keep current status
           priority: newPriority
         }
       });
@@ -1298,7 +1340,15 @@ const ReportingTaskManagement: React.FC = () => {
       // Revert the optimistic update on error
       setTasks(prevTasks => 
         prevTasks.map(task => 
-          task.id === taskId ? { ...task, priority: previousPriority } : task
+          task.task_assignment.id === taskId 
+            ? { 
+                ...task, 
+                task_assignment: {
+                  ...task.task_assignment,
+                  priority: previousPriority
+                }
+              } 
+            : task
         )
       );
 
@@ -1309,7 +1359,21 @@ const ReportingTaskManagement: React.FC = () => {
 
   // Add edit task handler
   const handleEditTask = (taskId: number, title: string, description: string) => {
-    setTasks(prevTasks => prevTasks.map(task => (task.id === taskId ? { ...task, title, description, requested_data: description } : task)));
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.task_assignment.id === taskId 
+          ? { 
+              ...task, 
+              title, 
+              description,
+              task_assignment: {
+                ...task.task_assignment,
+                requested_data: description
+              }
+            } 
+          : task
+      )
+    );
   };
 
   const taskContextValue = {
@@ -1557,7 +1621,7 @@ const ReportingTaskManagement: React.FC = () => {
         <TaskDetailDialog 
           open={taskDetailDialogOpen} 
           onClose={handleCloseTaskDetail} 
-          task={tasks.find(task => task.id === selectedTaskId) || null}
+          task={tasks.find(task => task.task_assignment.id === selectedTaskId) || null}
           onAssignUser={handleOpenAssignmentDialog}
           onAddUpdateData={handleAddUpdateData}
         />
