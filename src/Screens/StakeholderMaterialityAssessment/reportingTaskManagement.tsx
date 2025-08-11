@@ -664,7 +664,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ open, onClose, task
                 }
               }}
             >
-              {task?.task_assignment.assigned_to ? 'Edit Assignment' : 'Assign to User'}
+              Assign to User
             </Button>
           </Box>
         </Box>
@@ -1133,11 +1133,14 @@ const ReportingTaskManagement: React.FC = () => {
   };
 
   const handleOpenAssignmentDialog = (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find(t => t.task_assignment.id === taskId);
     if (task) {
       setSelectedTaskId(taskId);
       setCurrentTaskForAssignment(task);
       setDialogOpen(true);
+    } else {
+      console.log('Task not found for ID:', taskId);
+      console.log('Available tasks:', tasks.map(t => ({ id: t.id, assignmentId: t.task_assignment.id })));
     }
   };
 

@@ -39,6 +39,7 @@ import InternalAdditionalDisclosures from "./Screens/StakeholderMaterialityAsses
 import ReportingPeriod from "./Screens/ReportingPeriod.tsx";
 import ListReportingPeriod from "./Components/SidebarMenu/ListReportingPeriod";
 import Reports from "./Pages/Reports.tsx";
+import ViewReports from "./Screens/StakeholderMaterialityAssessment/ViewReports";
 import TaskManagement from "./Pages/TaskManagement.tsx";
 import ScApprovalRequest from "./Pages/SteeringCommitte/ScApprovalRequest.tsx";
 import ChooseMateriality from "./Screens/MaterialityAssesment/ChooseMateriality.tsx";
@@ -296,6 +297,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/view-reports"
+            element={
+              <ProtectedRoute>
+                <ViewReports />
               </ProtectedRoute>
             }
           />

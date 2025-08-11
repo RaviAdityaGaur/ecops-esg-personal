@@ -47,7 +47,15 @@ const getInitialMenuItems = (showNewBadge) => [
   },
   { title: 'Dashboard', icon: MaterialityAssessmentIcon },
   { title: 'Materiality Assessment', icon: MaterialityAssessmentIcon },
-  { title: 'Reports', icon: ReportsIcon },
+  { 
+    title: 'Reports', 
+    icon: ReportsIcon,
+    hasDropdown: true,
+    subItems: [
+      { title: '- Create Report', path: '/reports' },
+      { title: '- View Report', path: '/view-reports' }
+    ]
+  },
   { title: 'Configure Report', icon: DataWarehouseIcon }, // Remove the path property
   { title: 'Task Management', icon: DataWarehouseIcon },
   { title: 'Surveys', icon: DataWarehouseIcon, badge: showNewBadge ? 'new' : null },
@@ -134,7 +142,9 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ children }) => {
       case '/dashboard':
         return 'Dashboard';
       case '/reports':
-        return 'Reports';
+        return '- Create Report';
+      case '/view-reports':
+        return '- View Report';
       case '/task-management':
         return 'Task Management';
       case '/choose-standard':
@@ -147,6 +157,10 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ children }) => {
         return '';
     }
   });
+//case '/reporting-period': 156
+    //    return '- Add Reporting Period';
+    //  case '/list-reporting-period':
+     //   return '- List Reporting Periods';
 
   // Function to handle clicking on the Surveys tab
   const handleSurveyClick = () => {
@@ -179,7 +193,14 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ children }) => {
       setActiveItem('Dashboard');
       break;
     case '/reports':
-      setActiveItem('Reports');
+      setActiveItem('- Create Report');
+      // Auto-expand Reports dropdown
+      setExpandedItems(prev => prev.includes('Reports') ? prev : [...prev, 'Reports']);
+      break;
+    case '/view-reports':
+      setActiveItem('- View Report');
+      // Auto-expand Reports dropdown
+      setExpandedItems(prev => prev.includes('Reports') ? prev : [...prev, 'Reports']);
       break;
     case '/configure-report':
       setActiveItem('Configure Report');
@@ -199,6 +220,17 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ children }) => {
   }
 }, [location.pathname, navigate]);
 
+//case '/reporting-period': 221
+  //    setActiveItem('- Add Reporting Period');
+      // Auto-expand Reporting Period dropdown
+    //  setExpandedItems(prev => prev.includes('Reporting Period') ? prev : [...prev, 'Reporting Period']);
+    //  break;
+   // case '/list-reporting-period':
+   //   setActiveItem('- List Reporting Periods');
+     // Auto-expand Reporting Period dropdown
+   //   setExpandedItems(prev => prev.includes('Reporting Period') ? prev : [...prev, 'Reporting Period']);
+    //  break;
+//
   // Create a theme
   const theme = createTheme({
     palette: {
@@ -267,8 +299,6 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ children }) => {
       setActiveItem(item.title);
       if (item.title === 'Dashboard') {
         navigate('/dashboard');
-      } else if (item.title === 'Reports') {
-        navigate('/reports');
       } else if (item.title === 'Configure Report') {
         navigate('/configure-report');
       } else if (item.title === 'Task Management') {

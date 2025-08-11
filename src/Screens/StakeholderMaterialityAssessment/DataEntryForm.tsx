@@ -18,6 +18,7 @@ import {
     Select,
     MenuItem,
     FormControl,
+    Tooltip,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SidebarHeader from '../../Components/SidebarHeader';
@@ -88,13 +89,41 @@ const mockReportingRequirements: ReportingRequirement[] = [
 ];
 
 
-// Component for a single info card value
+// Component for a single info card value with tooltip
 const InfoValueCard = ({ value, isHighlighted = false }: { value: string, isHighlighted?: boolean }) => (
-    <Paper variant="outlined" sx={{ p: '6px 12px', textAlign: 'center', backgroundColor: 'white', borderColor: '#e0e0e0', boxShadow: 'none' }}>
-        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '14px', color: isHighlighted ? '#147C65' : 'text.primary' }}>
-            {value}
-        </Typography>
-    </Paper>
+    <Tooltip title={value} arrow placement="top" enterDelay={500}>
+        <Paper 
+            variant="outlined" 
+            sx={{ 
+                p: '6px 12px', 
+                textAlign: 'center', 
+                backgroundColor: 'white', 
+                borderColor: '#e0e0e0', 
+                boxShadow: 'none',
+                cursor: 'default',
+                '&:hover': {
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    transform: 'translateY(-1px)',
+                    transition: 'all 0.2s ease-in-out'
+                }
+            }}
+        >
+            <Typography 
+                variant="body2" 
+                sx={{ 
+                    fontWeight: 500, 
+                    fontSize: '14px', 
+                    color: isHighlighted ? '#147C65' : 'text.primary',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '100%'
+                }}
+            >
+                {value}
+            </Typography>
+        </Paper>
+    </Tooltip>
 );
 
 
@@ -130,15 +159,12 @@ const DataEntryForm: React.FC = () => {
                 try {
                     // Convert reportId to number
                     const reportIdNumber = Number(reportId);
-                    console.log('Debug: reportId (string):', reportId, 'converted to number:', reportIdNumber);
                     
                     // First, fetch the task list to get the current task details
                     const taskResponse: any = await api.get(`esg/api/report-task-list-by-report/${reportIdNumber}/tasks`).json();
-                    console.log('Debug: Task list response:', taskResponse);
                     
                     // Find the current task by taskId
                     const currentTaskData = taskResponse.find((task: any) => task.task_assignment.id === Number(taskId));
-                    console.log('Debug: Current task found:', currentTaskData);
                     
                     if (currentTaskData) {
                         setCurrentTask(currentTaskData);
@@ -159,9 +185,7 @@ const DataEntryForm: React.FC = () => {
                         // Get template instance data
                         const templateInstanceId = currentTaskData.template_instance?.id;
                         if (templateInstanceId) {
-                            console.log('Debug: Fetching template instance data for ID:', templateInstanceId);
                             const templateResponse: any = await api.get(`esgtemplate/template-instance/${templateInstanceId}/data`).json();
-                            console.log('Debug: Template instance data:', templateResponse);
                             setTemplateInstanceData(templateResponse);
                             
                             // Convert template data to reporting requirements format
@@ -171,13 +195,10 @@ const DataEntryForm: React.FC = () => {
                             }
                         }
                     } else {
-                        console.log('Debug: No task found matching taskId:', taskId);
                     }
                 } catch (error) {
                     console.error("Error fetching task and template data:", error);
                 }
-            } else {
-                console.log('Debug: Missing reportId or taskId - reportId:', reportId, 'taskId:', taskId);
             }
         };
 
@@ -273,8 +294,83 @@ const DataEntryForm: React.FC = () => {
     };
 
     const handleBack = () => navigate(-1);
-    const handleSaveAsDraft = () => console.log('Saving as draft...');
-    const handleSubmit = () => console.log('Submitting form...');
+    
+    const handleSaveAsDraft = async () => {
+        await submitFormData('draft');
+    };
+    
+    const handleSubmit = async () => {
+        await submitFormData('submitted');
+    };
+
+    // Function to prepare and submit form data with HTML content
+    const submitFormData = async (status: 'draft' | 'submitted') => {
+        try {
+            // Prepare the form data with HTML content
+            const formData = {
+                // Task and template information
+                taskId: Number(taskId),
+                templateInstanceId: currentTask?.template_instance?.id,
+                reportId: Number(reportId),
+                siteId: selectedSite,
+                
+                // HTML content from ReactQuill editors
+                disclosureContent: disclosureContent, // This is already in HTML format
+                summary: summary, // This is already in HTML format
+                
+                // Other form fields
+                referenceLink: referenceLink,
+                attachedDocuments: attachedDocuments.map(file => file.name), // File names for now
+                
+                // Table data (reporting requirements with values)
+                reportingRequirements: reportingRequirements.map(req => ({
+                    id: req.id,
+                    description: req.description,
+                    unit: req.unit,
+                    rowType: req.rowType,
+                    mainIndex: req.mainIndex,
+                    subIndex: req.subIndex,
+                    monthlyData: req.months
+                })),
+                
+                // Form metadata
+                status: status,
+                submittedAt: new Date().toISOString()
+            };
+
+            console.log('Debug: Disclosure content (HTML):', disclosureContent);
+            console.log('Debug: Summary content (HTML):', summary);
+
+            // TODO: Replace with actual API endpoint
+            // const response = await api.post('your-api-endpoint', formData).json();
+            
+            // For now, just log the data
+            console.log(`Form ${status} successfully with HTML content:`, formData);
+            
+            // Show success message or navigate
+            if (status === 'submitted') {
+                alert('Form submitted successfully!');
+                // navigate('/task-management'); // Uncomment when ready
+            } else {
+                alert('Form saved as draft!');
+            }
+            
+        } catch (error) {
+            console.error(`Error ${status === 'draft' ? 'saving draft' : 'submitting form'}:`, error);
+            alert(`Error ${status === 'draft' ? 'saving draft' : 'submitting form'}. Please try again.`);
+        }
+    };
+
+    // Function to get HTML content for debugging
+    const getHtmlContent = () => {
+        console.log('Current HTML content:');
+        console.log('Disclosure Content:', disclosureContent);
+        console.log('Summary Content:', summary);
+        return {
+            disclosureContent,
+            summary
+        };
+    };
     const handleCustomiseTemplate = () => {
         navigate('/customize-template-form', { 
             state: { templateId, taskId } 
@@ -285,13 +381,7 @@ const DataEntryForm: React.FC = () => {
             state: { templateId, taskId } 
         });
     };
-    const handleCellValueChange = (requirementId: number, month: string, value: string) => {
-        setReportingRequirements(prev =>
-            prev.map(req =>
-                req.id === requirementId ? { ...req, months: { ...req.months, [month]: value } } : req
-            )
-        );
-    };
+
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files) {
@@ -411,15 +501,61 @@ const DataEntryForm: React.FC = () => {
                                     </Typography>
                                     <Chip label="FY 2020-21" sx={{ bgcolor: '#E8F5E8', color: '#2E7D32', mb: 2, fontWeight: 600 }} />
                                     
-                                    {/* Debug information */}
-                                    {templateInstanceData && (
-                                        <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Debug: Template ID: {templateInstanceData.template_id}, 
-                                                Rows: {Object.keys(templateInstanceData.rows || {}).length}
-                                            </Typography>
-                                        </Box>
-                                    )}
+                                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                                    <TableCell sx={{ fontWeight: 600, minWidth: 300 }}>REPORTING REQUIREMENTS</TableCell>
+                                                    <TableCell sx={{ fontWeight: 600, width: 80 }}>UNIT</TableCell>
+                                                    {monthColumns.map((month) => (
+                                                        <TableCell key={month} sx={{ fontWeight: 600, width: 80 }}>{month}</TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {reportingRequirements.map((req) => (
+                                                    <TableRow key={req.id}>
+                                                        <TableCell sx={{ fontSize: '14px', pl: req.rowType === 'sub' ? 4 : 2 }}>
+                                                            {req.rowType === 'main' ? (
+                                                                <>{req.mainIndex}. {req.description}</>
+                                                            ) : (
+                                                                <>{req.subIndex}. {req.description}</>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontSize: '14px', fontWeight: 500, color: 'text.secondary' }}>
+                                                            {req.unit}
+                                                        </TableCell>
+                                                        {monthColumns.map((month) => (
+                                                            <TableCell key={month} sx={{ textAlign: 'center' }}>
+                                                                <Box 
+                                                                    sx={{ 
+                                                                        width: '60px', 
+                                                                        height: '32px',
+                                                                        border: '1px solid #e0e0e0',
+                                                                        borderRadius: '4px',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        backgroundColor: req.months[month] ? 'white' : '#f9f9f9',
+                                                                        fontSize: '12px',
+                                                                        fontWeight: req.months[month] ? 500 : 400,
+                                                                        color: req.months[month] ? 'text.primary' : 'text.disabled',
+                                                                        mx: 'auto'
+                                                                    }} 
+                                                                >
+                                                                    {req.months[month] || '-'}
+                                                                </Box>
+                                                            </TableCell>
+                                                        ))}
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+
+                                    {/* 
+                                    COMMENTED EDITABLE VERSION:
+                                    Replace the above table with this code when you need editable inputs
                                     
                                     <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
                                         <Table size="small">
@@ -442,21 +578,28 @@ const DataEntryForm: React.FC = () => {
                                                                 <>{req.subIndex}. {req.description}</>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell>{req.unit}</TableCell>
+                                                        <TableCell sx={{ fontSize: '14px', fontWeight: 500, color: 'text.secondary' }}>
+                                                            {req.unit}
+                                                        </TableCell>
                                                         {monthColumns.map((month) => (
-                                                            <TableCell key={month}>
-                                                                <TextField 
-                                                                    size="small" 
-                                                                    value={req.months[month]} 
-                                                                    onChange={(e) => handleCellValueChange(req.id, month, e.target.value)} 
-                                                                    variant="outlined" 
-                                                                    sx={{ 
-                                                                        width: '60px', 
-                                                                        '& .MuiOutlinedInput-input': { 
-                                                                            padding: '4px 8px', 
-                                                                            fontSize: '12px' 
-                                                                        } 
-                                                                    }} 
+                                                            <TableCell key={month} sx={{ textAlign: 'center' }}>
+                                                                <TextField
+                                                                    size="small"
+                                                                    value={req.months[month] || ''}
+                                                                    onChange={(e) => handleCellValueChange(req.id, month, e.target.value)}
+                                                                    variant="outlined"
+                                                                    sx={{
+                                                                        width: '60px',
+                                                                        '& .MuiInputBase-root': { 
+                                                                            height: '32px',
+                                                                            fontSize: '12px'
+                                                                        },
+                                                                        '& .MuiInputBase-input': {
+                                                                            textAlign: 'center',
+                                                                            padding: '4px 8px'
+                                                                        }
+                                                                    }}
+                                                                    placeholder="-"
                                                                 />
                                                             </TableCell>
                                                         ))}
@@ -465,6 +608,18 @@ const DataEntryForm: React.FC = () => {
                                             </TableBody>
                                         </Table>
                                     </TableContainer>
+                                    
+                                    And add back this function at the top of the component:
+                                    
+                                    const handleCellValueChange = (requirementId: number, month: string, value: string) => {
+                                        setReportingRequirements(prev =>
+                                            prev.map(req =>
+                                                req.id === requirementId ? { ...req, months: { ...req.months, [month]: value } } : req
+                                            )
+                                        );
+                                    };
+                                    */}
+
                                 </Box>
                             )}
                         </Paper>
@@ -512,6 +667,19 @@ const DataEntryForm: React.FC = () => {
                     {/* Action Buttons */}
                     <Grid item xs={12}>
                         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
+                            {/* Debug button to show HTML content */}
+                            <Button 
+                                variant="outlined" 
+                                onClick={getHtmlContent} 
+                                sx={{ 
+                                    textTransform: 'none', 
+                                    borderColor: '#ff9800', 
+                                    color: '#ff9800', 
+                                    '&:hover': { borderColor: '#ff9800', bgcolor: 'rgba(255, 152, 0, 0.05)' } 
+                                }}
+                            >
+                                Debug HTML
+                            </Button>
                             <Button variant="outlined" onClick={handleSaveAsDraft} sx={{ textTransform: 'none', borderColor: '#147C65', color: '#147C65', '&:hover': { borderColor: '#147C65', bgcolor: 'rgba(20, 124, 101, 0.05)' } }}>Save as draft</Button>
                             <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', bgcolor: '#147C65', '&:hover': { bgcolor: '#0f5a4a' } }}>Submit</Button>
                         </Box>
