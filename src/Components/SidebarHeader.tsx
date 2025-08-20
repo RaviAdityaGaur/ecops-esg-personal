@@ -52,7 +52,7 @@ const getInitialMenuItems = (showNewBadge) => [
     icon: ReportsIcon,
     hasDropdown: true,
     subItems: [
-      { title: '- Create Report', path: '/reports' },
+      // { title: '- Create Report', path: '/reports' },
       { title: '- View Report', path: '/view-reports' }
     ]
   },
@@ -141,8 +141,8 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ children }) => {
         return 'Materiality Assessment';
       case '/dashboard':
         return 'Dashboard';
-      case '/reports':
-        return '- Create Report';
+      // case '/reports':
+      //   return '- Create Report';
       case '/view-reports':
         return '- View Report';
       case '/task-management':
@@ -192,11 +192,11 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ children }) => {
     case '/dashboard':
       setActiveItem('Dashboard');
       break;
-    case '/reports':
-      setActiveItem('- Create Report');
-      // Auto-expand Reports dropdown
-      setExpandedItems(prev => prev.includes('Reports') ? prev : [...prev, 'Reports']);
-      break;
+    // case '/reports':
+    //   setActiveItem('- Create Report');
+    //   // Auto-expand Reports dropdown
+    //   setExpandedItems(prev => prev.includes('Reports') ? prev : [...prev, 'Reports']);
+    //   break;
     case '/view-reports':
       setActiveItem('- View Report');
       // Auto-expand Reports dropdown
