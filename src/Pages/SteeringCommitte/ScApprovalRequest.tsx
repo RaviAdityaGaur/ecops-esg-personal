@@ -19,6 +19,9 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
 import popImage from "../../assets/pop.png"
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { api } from "../../Screens/common";
 
 // Custom styled components
 const NumberBox = styled(Box)(({ theme }) => ({
@@ -52,7 +55,32 @@ const CommentButton = styled(IconButton)(({ theme }) => ({
   },
 }))
 
+
+
 const ScApprovalRequest = () => {
+
+const { report_uuid } = useParams<{ report_uuid: string }>();
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      if (!report_uuid) return; // prevent call until param is ready
+      const data = await api
+        .get(`/esg/api/get-report-id-from-uuid/?report_uuid=${report_uuid}`)
+        .json();
+        console.log(report_uuid);
+      console.log("Fetched Report Data:", data);
+    } catch (error) {
+      console.error("Error fetching report:", error);
+    }
+  };
+
+  fetchData();
+}, [report_uuid]);
+
+
   const [commentsArray, setCommentsArray] = useState<string[]>(["", "", ""])
   const [toggleStates, setToggleStates] = useState<boolean[]>([true, false, false])
   const [expandedQuestion, setExpandedQuestion] = useState<number>(0)
@@ -76,34 +104,96 @@ const ScApprovalRequest = () => {
     setCommentsArray(newComments)
   }
 
-  return (
+//   useEffect(() => {
+//   if (questions.length > 0) {
+//     setToggleStates(new Array(questions.length).fill(false));
+//     setCommentsArray(new Array(questions.length).fill(""));
+//   }
+// }, [questions]);
+
+  return ( 
     <SidebarHeader>
         <Grid sx={{backgroundColor: 'white', p: 1, borderRadius: 2}}>
       <Grid container spacing={2} sx={{ p: 2, mb: 2 }}>
         <Grid item xs={12} md={6}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography color="#147C65" fontWeight="bold">
-              Please select steering committee :
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <Select
-                value={committee}
-                onChange={(e) => setCommittee(e.target.value)}
-                displayEmpty
-                sx={{ boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-                    border: "none",
-                    "& fieldset": { border: "none" },}}
-                renderValue={(selected) => (selected ? selected : "Select")}
-                IconComponent={KeyboardArrowDownIcon}
+        <Stack spacing={2} sx={{ px: 2 }}>
+  {questions.map((q, index) => (
+    <Box key={q.id || index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+      <NumberBox
+        sx={{
+          mt: 1,
+          border: `1px solid ${selectedQuestion === index ? "#10B981" : "rgba(0, 0, 0, 0.12)"}`
+        }}
+      >
+        <Typography fontWeight="medium">{index + 1}.</Typography>
+      </NumberBox>
+
+      <Card
+        variant="outlined"
+        sx={{
+          flexGrow: 1,
+          borderColor: selectedQuestion === index ? "#10B981" : "rgba(0, 0, 0, 0.12)",
+          borderWidth: 1,
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="subtitle1" fontWeight="medium">
+                {q.question_text} {/* 👈 dynamic question */}
+              </Typography>
+              <InfoOutlinedIcon color="warning" fontSize="small" />
+            </Stack>
+
+            <Stack direction="row" spacing={2} alignItems="center">
+              <CommentButton
+                size="small"
+                onClick={() => handleExpandQuestion(index)}
+                sx={{
+                  backgroundColor: selectedQuestion === index ? "#10B981" : "#2e7d32",
+                }}
               >
-                <MenuItem value="">
-                  <em>Select</em>
-                </MenuItem>
-                <MenuItem value="Committee 1">Committee 1</MenuItem>
-                <MenuItem value="Committee 2">Committee 2</MenuItem>
-              </Select>
-            </FormControl>
+                <ChatBubbleOutlineIcon fontSize="small" />
+              </CommentButton>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {toggleStates[index] && (
+                  <Typography variant="caption" color="primary">
+                    Yes
+                  </Typography>
+                )}
+                <GreenSwitch
+                  checked={toggleStates[index]}
+                  onChange={() => handleToggleChange(index)}
+                  size="small"
+                />
+              </Stack>
+            </Stack>
           </Stack>
+
+          {expandedQuestion === index && (
+            <Box sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={4}
+                placeholder="Please Add Your Comment Here"
+                value={commentsArray[index] || ""}
+                onChange={(e) => handleCommentChange(index, e.target.value)}
+                variant="outlined"
+              />
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+                <Button variant="outlined" color="primary" sx={{ borderColor: "#2e7d32", color: "#2e7d32" }}>
+                  Save Comment
+                </Button>
+              </Box>
+            </Box>
+          )}
+        </Box>
+      </Card>
+    </Box>
+  ))}
+</Stack>
+
         </Grid>
         <Grid item xs={12} md={6}>
           <Typography color="#147C65" fontWeight="bold">

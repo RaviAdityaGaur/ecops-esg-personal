@@ -19,8 +19,7 @@ import {
 } from "@mui/material"
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline"
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
-import popImage from "../../assets/pop.png"
+
 
 // Custom styled components
 const NumberBox = styled(Box)(({ theme }) => ({
@@ -55,7 +54,7 @@ const CommentButton = styled(IconButton)(({ theme }) => ({
 }))
 
 const ReportingScApprovalRequest = () => {
-  const { reportId } = useParams();
+  const { reportUId } = useParams();
   const navigate = useNavigate();
   const [commentsArray, setCommentsArray] = useState<string[]>(["", "", ""])
   const [toggleStates, setToggleStates] = useState<boolean[]>([true, false, false])
@@ -64,21 +63,65 @@ const ReportingScApprovalRequest = () => {
   const [committee, setCommittee] = useState<string>("")
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [disclosures, setDisclosures] = useState<any[]>([]);
+  const [reportIdData, setReportIdData] = useState<any>();
 
   // Effect to fetch data when reportId is available
   useEffect(() => {
-    if (reportId) {
+    
+    if (reportUId) {
       // Here you can fetch approval request data based on the reportId
-      console.log(`Loading approval request data for report ID: ${reportId}`);
       
+      const fetchData = async () => {
+          try {
+            const data = await api
+              .get(`esg/api/get-report-id-from-uuid/?report_uuid=${reportUId}`)
+              .json();
+               
+             setReportIdData(data);
+            console.log("Fetched Report Data:", data);
+            console.log(`Loading approval request data for report ID: ${reportUId}`);
+          } catch (error) {
+            console.error("Error fetching report:", error);
+          }
+        };
+        fetchData();
       // Add API call here to fetch relevant data
     }
-  }, [reportId]);
+  }, [reportUId]);
 
-  const handleBack = () => {
-    // Navigate back to the previous page
-     navigate(`/reporting-email/${reportId}`);
-  }
+
+   useEffect(() => {
+      const fetchDisclosuresForReport = async () => {
+        if (!reportIdData) {
+          setDisclosures([]);
+          return;
+        }
+  
+        setLoading(true);
+        try {
+          const response: any = await api
+            .get(`esg/api/get-disclosure-for-report/?report_id=${reportIdData.report_id}`)
+            .json();
+  
+          const fetched = response.disclosures ? response.disclosures : [];
+          console.log("Fetched disclosures:", fetched);
+          setDisclosures(fetched);
+        } catch (err) {
+          console.error("Error fetching disclosures:", err);
+          console.log("Falling back to demoData");
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchDisclosuresForReport();
+    }, [reportIdData]);
+
+  // const handleBack = () => {
+  //   // Navigate back to the previous page
+  //    navigate(`/reporting-email/${reportId}`);
+  // }
 
   const handleToggleChange = (index: number) => {
     const newToggleStates = [...toggleStates]
@@ -103,7 +146,7 @@ const ReportingScApprovalRequest = () => {
       setLoading(true);
       // You can add an API call here to submit data to the backend
       console.log('Submitting data:', {
-        reportId,
+        //reportId,
         toggleStates,
         commentsArray
       });
@@ -113,7 +156,7 @@ const ReportingScApprovalRequest = () => {
       
       setSubmitted(true);
       // Navigate to sustainability manager response page with reportId
-      navigate(`/sustainability-manager-response/${reportId}`);
+      //navigate(`/sustainability-manager-response/${reportId}`);
     } catch (error) {
       console.error('Error submitting data:', error);
     } finally {
@@ -134,7 +177,7 @@ const ReportingScApprovalRequest = () => {
       </Grid>
 
       <Stack spacing={2} sx={{ px: 2 }}>
-        {[0, 1, 2].map((index) => (
+        {disclosures.map((data,index=1) => (
           <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start' }}>
             {/* Number box outside the card with conditional border color */}
             <NumberBox sx={{ 
@@ -158,7 +201,7 @@ const ReportingScApprovalRequest = () => {
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Stack direction="row" alignItems="center" spacing={1}>
                       <Typography variant="subtitle1" fontWeight="medium">
-                        Negative environmental impact in the supply chain and action taken?
+                        {data.disclosure_description}
                       </Typography>
                       <InfoOutlinedIcon color="warning" fontSize="small" />
                     </Stack>
@@ -213,7 +256,7 @@ const ReportingScApprovalRequest = () => {
       </Stack>
 
       <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ p: 2, mt: 2 }}>
-        <Button variant="outlined" color="inherit" onClick={handleBack}>
+        <Button variant="outlined" color="inherit" >
           Back
         </Button>
         <Button

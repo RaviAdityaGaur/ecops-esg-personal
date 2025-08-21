@@ -326,7 +326,7 @@ function App() {
             }
           />
           <Route
-            path="/steering-committee-approval-request/:reportId"
+            path="/steering-committee-approval-request/:reportUId"
             element={
               <ProtectedRoute>
                 <ReportingScApprovalRequest />

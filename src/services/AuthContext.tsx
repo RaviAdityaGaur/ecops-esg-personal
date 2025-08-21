@@ -2,6 +2,39 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from "../Screens/common";
 
+
+
+ export function useReport(reportUuid: string) {
+  const [report, setReport] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!reportUuid) return;
+
+    const fetchReport = async () => {
+      try {
+        const response = await api
+          .get(`steering-committee-approval-request/${reportUuid}`)
+          .json();
+        console.log("Fetched Report Data:", response);
+        setReport(response);
+      } catch (err) {
+        console.error("Error fetching report:", err);
+        setError("Failed to fetch report");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReport();
+  }, [reportUuid]);
+
+  return { report, loading, error };
+}
+
+
+
 interface UserGroups {
   id: number;
   groups_name: string[];
@@ -55,6 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
+
+
 
   const hasPermission = (permission: string): boolean => {
     // Debug logs
