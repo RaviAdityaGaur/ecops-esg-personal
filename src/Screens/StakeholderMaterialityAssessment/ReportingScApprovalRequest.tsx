@@ -65,6 +65,7 @@ const ReportingScApprovalRequest = () => {
   const [submitted, setSubmitted] = useState(false)
   const [disclosures, setDisclosures] = useState<any[]>([]);
   const [reportIdData, setReportIdData] = useState<any>();
+  const [saveData,setDaveData]=useState([])
 
   // Effect to fetch data when reportId is available
   useEffect(() => {
@@ -117,6 +118,30 @@ const ReportingScApprovalRequest = () => {
   
       fetchDisclosuresForReport();
     }, [reportIdData]);
+
+    
+// save data api
+  
+
+//   const fetchData = async () => {
+//   try {
+//     const response = await api.get('api-endpoint');
+//     const data = response.data;
+//     setReceivedData(data);
+//     console.log('Received data:', data);
+//   } catch (error) {
+//     console.error('Error fetching data:', error);
+//   }
+// };
+
+const handleSaveData = async () => {
+  try {
+    const response = await api.post('save-api-endpoint', receivedData);
+    console.log('Data saved successfully:', response);
+  } catch (error) {
+    console.error('Error saving data:', error);
+  }
+};
 
   // const handleBack = () => {
   //   // Navigate back to the previous page
@@ -242,7 +267,7 @@ const ReportingScApprovalRequest = () => {
                         variant="outlined"
                       />
                       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-                        <Button variant="outlined" color="primary" sx={{ borderColor: "#2e7d32", color: "#2e7d32" }}>
+                        <Button  variant="outlined" color="primary" sx={{ borderColor: "#2e7d32", color: "#2e7d32" }}>
                           Save Comment
                         </Button>
                       </Box>
